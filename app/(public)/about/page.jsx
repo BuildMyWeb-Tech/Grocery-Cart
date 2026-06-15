@@ -2,7 +2,7 @@
 import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
-import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
+import { removeFromCart } from "@/lib/features/cart/cartSlice";
 import { Trash2Icon, ShoppingBagIcon, ArrowLeftIcon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -37,7 +37,7 @@ export default function Cart() {
     }
 
     const handleDeleteItemFromCart = (productId) => {
-        dispatch(deleteItemFromCart({ productId }))
+        dispatch(removeFromCart(productId))
     }
 
     useEffect(() => {
