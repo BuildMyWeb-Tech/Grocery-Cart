@@ -1,0 +1,255 @@
+@import "tailwindcss";
+@layer components {
+    @keyframes marqueeScroll {
+        0% {
+            transform: translateX(0%);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+}
+
+@layer base {
+    button {
+        cursor: pointer;
+    }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+
+/* Custom scrollbar for better UI */
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+
+/* Add shimmer animation for loading states */
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+
+/* Mobile-first responsive adjustments */
+
+@media (max-width: 640px) {
+    /* For StoreAddProduct */
+    .flex-col-mobile {
+        flex-direction: column;
+    }
+    /* For product table */
+    .max-w-mobile {
+        max-width: 200px;
+    }
+    /* Improve form spacing on mobile */
+    .p-mobile-smaller {
+        padding: 0.75rem;
+    }
+    /* Better image layout for small screens */
+    .product-images-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* For animation effects */
+
+.animate-in {
+    animation-duration: 300ms;
+    --enter-opacity: 0;
+    --enter-scale: 0.95;
+}
+
+.slide-in-from-top {
+    --enter-translate-y: -20px;
+}
+
+@keyframes enter {
+    0% {
+        opacity: var(--enter-opacity);
+        transform: translate3d(var(--enter-translate-x, 0), var(--enter-translate-y, 0), 0) scale3d(var(--enter-scale, 1), var(--enter-scale, 1), var(--enter-scale, 1)) rotate(var(--enter-rotate, 0));
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1) rotate(0);
+    }
+}
+
+.animate-in {
+    animation-name: enter;
+    animation-fill-mode: both;
+}
+
+
+/* Animation utilities */
+
+.animate-in {
+    animation-duration: 300ms;
+    --enter-opacity: 0;
+    --enter-scale: 0.95;
+    animation-fill-mode: both;
+}
+
+.fade-in.animate-in {
+    animation-name: fade-in;
+}
+
+.slide-in-from-top-5 {
+    --enter-translate-y: -5px;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: var(--enter-opacity);
+        transform: translate3d(0, var(--enter-translate-y, 0), 0) scale3d(var(--enter-scale, 1), var(--enter-scale, 1), var(--enter-scale, 1));
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    }
+}
+
+
+/* Custom scrollbar */
+
+.overflow-y-auto::-webkit-scrollbar {
+    width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: rgba(203, 213, 225, 0.5);
+    border-radius: 20px;
+}
+
+
+/* Hide scrollbar for specific elements */
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+
+/* Responsive adjustments */
+
+@media (max-width: 640px) {
+    .mobile-menu-collapsed {
+        width: 60px;
+    }
+    .mobile-expanded {
+        width: 100%;
+        position: absolute;
+        z-index: 50;
+        height: 100vh;
+    }
+}
+
+
+/* Hide scrollbar but allow scrolling */
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    overflow-y: auto;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+}
+
+
+/* Animation utilities */
+
+.animate-in {
+    animation-duration: 300ms;
+    --enter-opacity: 0;
+    --enter-scale: 0.95;
+    animation-fill-mode: both;
+}
+
+.fade-in.animate-in {
+    animation-name: fade-in;
+}
+
+.slide-in-from-top-5 {
+    --enter-translate-y: -5px;
+}
+
+.slide-in-from-left {
+    --enter-translate-x: -20px;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: var(--enter-opacity);
+        transform: translate3d(var(--enter-translate-x, 0), var(--enter-translate-y, 0), 0) scale3d(var(--enter-scale, 1), var(--enter-scale, 1), var(--enter-scale, 1));
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    }
+}
+
+
+/* Mobile menu slide in animation */
+
+@keyframes slide-in {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+
+/* Mobile menu specific */
+
+@media (max-width: 768px) {
+    .mobile-menu-content {
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        z-index: 50;
+        background-color: white;
+        width: 275px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+    }
+    body.menu-open {
+        overflow: hidden;
+    }
+}

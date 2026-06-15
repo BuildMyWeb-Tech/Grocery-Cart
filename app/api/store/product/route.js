@@ -1,0 +1,430 @@
+// app/api/store/product/route.js
+import prisma from '@/lib/prisma';
+import authSeller from '@/middlewares/authSeller';
+import verifyEmployeeToken, { hasPermission, PERMISSIONS } from '@/middlewares/authEmployee';
+import imagekit from '@/configs/imageKit';
+import { getAuth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+
+// ── Slug generator ────────────────────────────────────────────────────────────
+function generateSlug(name) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+// ── Resolve store auth (owner or employee) ────────────────────────────────────
+async function resolveStoreAuth(request) {
+  // Employee JWT first
+  const employee = verifyEmployeeToken(request);
+  if (employee) return { storeId: employee.storeId, employee, source: 'employee' };
+
+  // Clerk store owner
+  const { userId } = getAuth(request);
+  if (!userId) return { storeId: null };
+  const storeId = await authSeller(userId);
+  return { storeId, source: 'owner' };
+}
+
+// ── POST /api/store/product — Create product with variants ────────────────────
+export async function POST(request) {
+  try {
+    const { storeId, employee, source } = await resolveStoreAuth(request);
+    if (!storeId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (source === 'employee' && !hasPermission(employee, PERMISSIONS.ADD_PRODUCT)) {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+    }
+
+    const { userId } = source === 'owner' ? getAuth(request) : {};
+
+    const formData = await request.formData();
+
+    const name           = formData.get('name')?.trim();
+    const description    = formData.get('description')?.trim();
+    const brand          = formData.get('brand')?.trim() || null;
+    const keyFeaturesRaw = formData.get('keyFeatures');
+    const categoryIdsRaw = formData.get('categoryIds'); // JSON array of category IDs
+    const variantsRaw    = formData.get('variants');    // JSON array of variant objects
+    const images         = formData.getAll('images');
+
+    // ── Validation ────────────────────────────────────────────────
+    if (!name || !description) {
+      return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
+    }
+
+    if (images.length < 1 || images.length > 10) {
+      return NextResponse.json(
+        { error: 'Between 1 and 10 images are required' },
+        { status: 400 }
+      );
+    }
+
+    let categoryIds = [];
+    try {
+      categoryIds = JSON.parse(categoryIdsRaw || '[]');
+      if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+        return NextResponse.json({ error: 'At least one category is required' }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Invalid categoryIds format' }, { status: 400 });
+    }
+
+    let variantList = [];
+    try {
+      variantList = JSON.parse(variantsRaw || '[]');
+    } catch {
+      return NextResponse.json({ error: 'Invalid variants format' }, { status: 400 });
+    }
+
+    if (!Array.isArray(variantList) || variantList.length === 0) {
+      return NextResponse.json({ error: 'At least one variant is required' }, { status: 400 });
+    }
+
+    // Validate each variant
+    for (const v of variantList) {
+      if (!v.color || !v.size || !v.sku) {
+        return NextResponse.json(
+          { error: 'Each variant must have color, size and SKU' },
+          { status: 400 }
+        );
+      }
+      if (isNaN(Number(v.price)) || Number(v.price) <= 0) {
+        return NextResponse.json({ error: 'Each variant must have a valid price' }, { status: 400 });
+      }
+    }
+
+    // Check SKU uniqueness across all variants in this request
+    const skus = variantList.map((v) => v.sku);
+    if (new Set(skus).size !== skus.length) {
+      return NextResponse.json({ error: 'Duplicate SKUs in variants' }, { status: 400 });
+    }
+
+    // Check SKU uniqueness in DB
+    const existingSkus = await prisma.productVariant.findMany({
+      where: { sku: { in: skus } },
+      select: { sku: true },
+    });
+    if (existingSkus.length > 0) {
+      return NextResponse.json(
+        { error: `SKU already exists: ${existingSkus.map((s) => s.sku).join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validate categories belong to global or this store
+    const validCategories = await prisma.category.findMany({
+      where: {
+        id: { in: categoryIds },
+        OR: [{ isGlobal: true }, { storeId }],
+      },
+    });
+    if (validCategories.length !== categoryIds.length) {
+      return NextResponse.json({ error: 'One or more invalid category IDs' }, { status: 400 });
+    }
+
+    // ── Slug generation ───────────────────────────────────────────
+    let slug = generateSlug(name);
+    const slugExists = await prisma.product.findFirst({ where: { slug, storeId } });
+    if (slugExists) slug = `${slug}-${Date.now()}`;
+
+    // ── Upload images ─────────────────────────────────────────────
+    const imageUrls = await Promise.all(
+      images.map(async (image) => {
+        const buffer = Buffer.from(await image.arrayBuffer());
+        const res = await imagekit.upload({
+          file: buffer,
+          fileName: image.name,
+          folder: 'products',
+        });
+        return imagekit.url({
+          path: res.filePath,
+          transformation: [{ quality: 'auto' }, { format: 'webp' }, { width: '1024' }],
+        });
+      })
+    );
+
+    let keyFeatures = [];
+    try {
+      keyFeatures = JSON.parse(keyFeaturesRaw || '[]');
+      if (!Array.isArray(keyFeatures)) keyFeatures = [];
+    } catch {
+      keyFeatures = [];
+    }
+    keyFeatures = keyFeatures.filter((f) => typeof f === 'string' && f.trim() !== '');
+
+    // ── Create product + variants + inventory in transaction ──────
+    const product = await prisma.$transaction(async (tx) => {
+      const created = await tx.product.create({
+        data: {
+          storeId,
+          name,
+          slug,
+          description,
+          brand,
+          keyFeatures,
+          images: imageUrls,
+          status: 'ACTIVE',
+          createdBy: source === 'employee' ? employee.employeeId : 'owner',
+        },
+      });
+
+      // Link categories via join table
+      await tx.productCategory.createMany({
+        data: categoryIds.map((categoryId) => ({
+          productId: created.id,
+          categoryId,
+        })),
+      });
+
+      // Create variants + inventory per variant
+      for (const v of variantList) {
+        const variant = await tx.productVariant.create({
+          data: {
+            productId: created.id,
+            color: v.color.trim(),
+            size: v.size.trim(),
+            price: Number(v.price),
+            costPrice: Number(v.costPrice || 0),
+            sku: v.sku.trim(),
+            stock: Math.max(0, Number(v.stock || 0)),
+          },
+        });
+
+        // Create inventory record per variant
+        await tx.inventory.create({
+          data: {
+            variantId: variant.id,
+            storeId,
+            quantity: Math.max(0, Number(v.stock || 0)),
+            lowStock: 10,
+          },
+        });
+      }
+
+      return tx.product.findUnique({
+        where: { id: created.id },
+        include: {
+          variants: true,
+          categories: { include: { category: true } },
+        },
+      });
+    });
+
+    return NextResponse.json(
+      { message: 'Product created successfully', product },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('POST /api/store/product error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// ── GET /api/store/product — List store's own products ────────────────────────
+export async function GET(request) {
+  try {
+    const { storeId, employee, source } = await resolveStoreAuth(request);
+    if (!storeId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const search   = searchParams.get('search');
+    const status   = searchParams.get('status');
+    const page     = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit    = Math.min(100, parseInt(searchParams.get('limit') || '20'));
+    const skip     = (page - 1) * limit;
+
+    const where = { storeId };
+    if (status) where.status = status;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { brand: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          variants: {
+            include: { inventory: true },
+          },
+          categories: {
+            include: { category: { select: { id: true, name: true, isGlobal: true } } },
+          },
+          ratings: { select: { rating: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return NextResponse.json({ products, total, page, limit });
+  } catch (error) {
+    console.error('GET /api/store/product error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// ── PUT /api/store/product?id=xxx — Update product ───────────────────────────
+export async function PUT(request) {
+  try {
+    const { storeId, employee, source } = await resolveStoreAuth(request);
+    if (!storeId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (source === 'employee' && !hasPermission(employee, PERMISSIONS.EDIT_PRODUCT)) {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('id');
+    if (!productId) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+
+    // Verify product belongs to this store
+    const existing = await prisma.product.findFirst({ where: { id: productId, storeId } });
+    if (!existing) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
+    const formData = await request.formData();
+
+    const name           = formData.get('name')?.trim();
+    const description    = formData.get('description')?.trim();
+    const brand          = formData.get('brand')?.trim() || null;
+    const status         = formData.get('status') || existing.status;
+    const keyFeaturesRaw = formData.get('keyFeatures');
+    const categoryIdsRaw = formData.get('categoryIds');
+    const existingImagesRaw = formData.get('existingImages');
+    const newImages      = formData.getAll('images');
+
+    if (!name || !description) {
+      return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
+    }
+
+    if (!['ACTIVE', 'INACTIVE', 'DRAFT'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
+    // Merge existing + new images
+    let existingImages = [];
+    try {
+      existingImages = JSON.parse(existingImagesRaw || '[]');
+    } catch { existingImages = []; }
+
+    let newImageUrls = [];
+    if (newImages.length > 0) {
+      newImageUrls = await Promise.all(
+        newImages.map(async (image) => {
+          const buffer = Buffer.from(await image.arrayBuffer());
+          const res = await imagekit.upload({
+            file: buffer,
+            fileName: image.name,
+            folder: 'products',
+          });
+          return imagekit.url({
+            path: res.filePath,
+            transformation: [{ quality: 'auto' }, { format: 'webp' }, { width: '1024' }],
+          });
+        })
+      );
+    }
+
+    const allImages = [...existingImages, ...newImageUrls];
+    if (allImages.length < 1 || allImages.length > 10) {
+      return NextResponse.json({ error: 'Between 1 and 10 images required' }, { status: 400 });
+    }
+
+    let keyFeatures = [];
+    try {
+      keyFeatures = JSON.parse(keyFeaturesRaw || '[]');
+      if (!Array.isArray(keyFeatures)) keyFeatures = [];
+    } catch { keyFeatures = []; }
+    keyFeatures = keyFeatures.filter((f) => typeof f === 'string' && f.trim() !== '');
+
+    const updateData = {
+      name,
+      description,
+      brand,
+      keyFeatures,
+      images: allImages,
+      status,
+    };
+
+    // Update slug if name changed
+    if (name !== existing.name) {
+      let slug = generateSlug(name);
+      const slugExists = await prisma.product.findFirst({
+        where: { slug, storeId, id: { not: productId } },
+      });
+      if (slugExists) slug = `${slug}-${Date.now()}`;
+      updateData.slug = slug;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const prod = await tx.product.update({
+        where: { id: productId },
+        data: updateData,
+      });
+
+      // Update categories if provided
+      if (categoryIdsRaw) {
+        let categoryIds = [];
+        try { categoryIds = JSON.parse(categoryIdsRaw); } catch { categoryIds = []; }
+
+        if (categoryIds.length > 0) {
+          // Validate categories
+          const validCategories = await tx.category.findMany({
+            where: { id: { in: categoryIds }, OR: [{ isGlobal: true }, { storeId }] },
+          });
+          if (validCategories.length !== categoryIds.length) {
+            throw new Error('One or more invalid category IDs');
+          }
+
+          // Replace categories
+          await tx.productCategory.deleteMany({ where: { productId } });
+          await tx.productCategory.createMany({
+            data: categoryIds.map((categoryId) => ({ productId, categoryId })),
+          });
+        }
+      }
+
+      return prod;
+    });
+
+    return NextResponse.json({ message: 'Product updated successfully', product: updated });
+  } catch (error) {
+    console.error('PUT /api/store/product error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// ── DELETE /api/store/product?id=xxx — Delete product ───────────────────────
+export async function DELETE(request) {
+  try {
+    const { storeId, employee, source } = await resolveStoreAuth(request);
+    if (!storeId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (source === 'employee' && !hasPermission(employee, PERMISSIONS.DELETE_PRODUCT)) {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('id');
+    if (!productId) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+
+    const existing = await prisma.product.findFirst({ where: { id: productId, storeId } });
+    if (!existing) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+
+    // Cascade deletes variants, inventory, productCategory via Prisma schema
+    await prisma.product.delete({ where: { id: productId } });
+
+    return NextResponse.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('DELETE /api/store/product error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
