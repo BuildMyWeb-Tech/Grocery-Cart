@@ -131,9 +131,10 @@ model Product {
   name        String
   slug        String
   description String
-  brand       String?
   keyFeatures String[]        @default([])
   images      String[]
+  isOrganic   Boolean         @default(false)
+  isFeatured  Boolean         @default(false)
   status      ProductStatus   @default(ACTIVE)
   createdBy   String
   createdAt   DateTime        @default(now())
@@ -168,12 +169,10 @@ model ProductCategory {
 model ProductVariant {
   id          String   @id @default(cuid())
   productId   String
-  color       String
-  size        String
+  variantName String
   price       Float
   costPrice   Float    @default(0)
   sku         String   @unique
-  stock       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -183,8 +182,8 @@ model ProductVariant {
 
   @@index([productId])
   @@index([sku])
-  @@index([stock])
 }
+
 
 // ─── INVENTORY ───────────────────────────────────────────────────────────────
 
@@ -351,6 +350,7 @@ enum ProductStatus {
   ACTIVE
   INACTIVE
   DRAFT
+  OUT_OF_STOCK
 }
 
 enum OrderStatus {

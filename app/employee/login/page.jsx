@@ -45,7 +45,7 @@ export default function EmployeeLoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center text-4xl font-bold text-slate-800">
-            <span className="text-green-600">King</span>cart
+            <span className="text-green-600">Grocery</span>cart
             <span className="text-green-600 text-5xl leading-none">.</span>
           </Link>
           <p className="text-slate-500 text-sm mt-2">Employee Portal</p>

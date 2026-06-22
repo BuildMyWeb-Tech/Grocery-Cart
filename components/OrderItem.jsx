@@ -100,10 +100,9 @@ export default function OrderItem({ order, onOrderUpdated }) {
                   </div>
                   <div className="flex flex-col gap-1 text-sm">
                     <p className="font-medium text-slate-700">{productName}</p>
-                    {variant && (
+                    {variant?.variantName && (
                       <div className="flex gap-1.5">
-                        {variant.color && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{variant.color}</span>}
-                        {variant.size  && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">{variant.size}</span>}
+                        <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded font-semibold">{variant.variantName}</span>
                       </div>
                     )}
                     <p className="text-slate-500 text-xs">₹{item.price} × {item.quantity}</p>
@@ -151,7 +150,6 @@ export default function OrderItem({ order, onOrderUpdated }) {
                 {showTimeline ? 'Hide history' : `History (${order.timeline.length})`}
               </button>
             )}
-            {/* ✅ Cancel order — preserved from old modal */}
             {CANCELLABLE_STATUSES.has(order.status) && !confirmCancel && (
               <button onClick={() => setConfirmCancel(true)}
                 className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700">
@@ -162,7 +160,6 @@ export default function OrderItem({ order, onOrderUpdated }) {
         </td>
       </tr>
 
-      {/* Cancel confirmation row */}
       {confirmCancel && (
         <tr><td colSpan={4} className="px-6 py-3 bg-red-50">
           <div className="max-w-md flex items-start gap-3">

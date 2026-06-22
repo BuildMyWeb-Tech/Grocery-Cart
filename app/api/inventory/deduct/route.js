@@ -64,7 +64,8 @@ export async function POST(request) {
             throw new Error(`Variant ${item.variantId} does not belong to this store`);
           }
 
-          const currentStock = variant.stock;
+          // Current stock now lives on Inventory, not the variant itself
+          const currentStock = variant.inventory?.quantity ?? 0;
           if (currentStock < deductQty) {
             throw new Error(
               `Insufficient stock for variant ${item.variantId}. Available: ${currentStock}`
@@ -72,12 +73,6 @@ export async function POST(request) {
           }
 
           const newStock = currentStock - deductQty;
-
-          // Update variant stock
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: { stock: newStock },
-          });
 
           // Sync inventory record
           await tx.inventory.upsert({

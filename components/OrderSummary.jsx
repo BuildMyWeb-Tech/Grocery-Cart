@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\OrderSummary.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\OrderSummary.jsx
 import {
   PlusIcon, SquarePenIcon, CheckCircleIcon, ClockIcon,
   ShieldCheckIcon, TrendingDown,
@@ -167,7 +167,7 @@ const OrderSummary = ({ totalPrice, items, appliedCoupon = null, discount = 0 })
           <div className="flex justify-between mb-4">
             <div className="flex flex-col gap-2 text-slate-600">
               <p>Subtotal:</p>
-              <p>Shipping:</p>
+              {/* <p>Shipping:</p> */}
               {appliedCoupon && (
                 <p className="text-green-600 font-medium flex items-center gap-1">
                   <TrendingDown size={14} /> Discount ({appliedCoupon.discount}%):
@@ -176,11 +176,11 @@ const OrderSummary = ({ totalPrice, items, appliedCoupon = null, discount = 0 })
             </div>
             <div className="flex flex-col gap-2 font-medium text-right">
               <p>₹{totalPrice.toLocaleString('en-IN')}</p>
-              <p>
+              {/* <p>
                 <Protect plan="plus" fallback={<span className="text-slate-700">₹5</span>}>
                   <span className="text-green-600">Free</span>
                 </Protect>
-              </p>
+              </p> */}
               {appliedCoupon && <p className="text-green-600">- ₹{discount.toFixed(2)}</p>}
             </div>
           </div>
@@ -200,7 +200,7 @@ const OrderSummary = ({ totalPrice, items, appliedCoupon = null, discount = 0 })
           <div className="flex justify-between items-center mb-6">
             <p className="text-lg font-semibold text-slate-700">Total:</p>
             <p className="text-xl font-bold text-slate-800">
-              <Protect plan="plus" fallback={`₹${(totalPrice + 5 - discount).toFixed(2)}`}>
+              <Protect plan="plus" fallback={`₹${(totalPrice - discount).toFixed(2)}`}>
                 ₹{(totalPrice - discount).toFixed(2)}
               </Protect>
             </p>

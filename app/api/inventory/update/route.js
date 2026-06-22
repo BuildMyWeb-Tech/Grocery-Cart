@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\api\inventory\update\route.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\api\inventory\update\route.js
 import prisma from '@/lib/prisma';
 import authSeller from '@/middlewares/authSeller';
 import verifyEmployeeToken, { hasPermission, PERMISSIONS } from '@/middlewares/authEmployee';
@@ -56,24 +56,16 @@ export async function POST(request) {
       updatePayload.lowStock = Math.max(1, Number(lowStock));
     }
 
-    const [inventory] = await prisma.$transaction([
-      // Update inventory record
-      prisma.inventory.upsert({
-        where: { variantId },
-        update: updatePayload,
-        create: {
-          variantId,
-          storeId,
-          quantity: newQty,
-          lowStock: updatePayload.lowStock ?? 10,
-        },
-      }),
-      // Keep variant stock in sync
-      prisma.productVariant.update({
-        where: { id: variantId },
-        data: { stock: newQty },
-      }),
-    ]);
+    const inventory = await prisma.inventory.upsert({
+      where: { variantId },
+      update: updatePayload,
+      create: {
+        variantId,
+        storeId,
+        quantity: newQty,
+        lowStock: updatePayload.lowStock ?? 10,
+      },
+    });
 
     return NextResponse.json({
       message: 'Stock updated successfully',

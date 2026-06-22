@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\Footer.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\Footer.jsx
 'use client'
 
 import Link from "next/link";
@@ -10,10 +10,10 @@ import {
   Instagram,
   Twitter,
   Linkedin,
-  Headphones,
-  Smartphone,
-  Laptop,
-  ShoppingBag,
+  Carrot,
+  Apple,
+  Leaf,
+  Milk,
   Shield,
   Crown,
   Store,
@@ -28,10 +28,10 @@ const Footer = () => {
     {
       title: "SHOP BY CATEGORY",
       links: [
-        { text: "Electronics & Gadgets", path: "/", icon: Headphones },
-        { text: "Fashion & Apparel", path: "/", icon: ShoppingBag },
-        { text: "Mobile Devices", path: "/", icon: Smartphone },
-        { text: "Computing", path: "/", icon: Laptop },
+        { text: "Vegetables", path: "/shop?category=Vegetables", icon: Carrot },
+        { text: "Fruits", path: "/shop?category=Fruits", icon: Apple },
+        { text: "Organic Products", path: "/shop?category=Organic%20Products", icon: Leaf },
+        { text: "Daily Essentials", path: "/shop?category=Daily%20Essentials", icon: Milk },
       ]
     },
     {
@@ -56,7 +56,7 @@ const Footer = () => {
       title: "GET IN TOUCH",
       links: [
         { text: "+91 9344095727", path: "tel:+919344095727", icon: Phone },
-        { text: "support@kingcart.com", path: "mailto:support@kingcart.com", icon: Mail },
+        { text: "support@grocerycart.com", path: "mailto:support@grocerycart.com", icon: Mail },
         {
           text: "69 , Mettu Street,Srirangam, Trichy.",
           path: "https://maps.google.com",
@@ -86,13 +86,13 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <Link href="/" className="text-4xl font-bold flex items-center">
               <span className="bg-green-500 text-white px-2 py-1 rounded-lg mr-1">
-                King
+                Grocery
               </span>
-              cart<span className="text-green-600">.</span>
+              Cart<span className="text-green-600">.</span>
             </Link>
 
             <p className="mt-4 text-sm text-slate-500">
-              Secure shopping, fast delivery, and verified sellers.
+              Fresh groceries, fast delivery, and verified local stores.
             </p>
 
             <div className="flex gap-3 mt-6">
@@ -143,7 +143,7 @@ const Footer = () => {
           <p>
             © {new Date().getFullYear()}{" "}
             <Link href="/" className="text-green-600 hover:underline">
-              Kingcart
+              Grocery Cart
             </Link>
             . All rights reserved.
           </p>

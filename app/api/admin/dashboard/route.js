@@ -19,7 +19,7 @@ export async function GET(request) {
       revenueAgg, todayRevenueAgg,
       pendingOrders, confirmedOrders, packedOrders, shippedOrders,
       outForDeliveryOrders, deliveredOrders, cancelledOrders, returnedOrders,
-      topStoresRaw, recentOrders, lowStockVariants, last90DaysOrders,
+      topStoresRaw, recentOrders, allInventoryRecords, last90DaysOrders,
     ] = await Promise.all([
       prisma.order.count(),
       prisma.store.count(),
@@ -68,21 +68,23 @@ export async function GET(request) {
         },
       }),
 
-      prisma.productVariant.findMany({
-        where: { stock: { lte: 5 } },
-        include: {
-          product: {
+      // Low-stock detection now reads Inventory directly — ProductVariant has
+      // no stock column. Prisma can't compare quantity <= lowStock as a `where`
+      // filter (two columns on the same row), so we fetch and filter in JS below.
+      prisma.inventory.findMany({
+        select: {
+          id: true, quantity: true, lowStock: true, storeId: true,
+          variant: {
             select: {
-              id: true, name: true,
-              store: { select: { id: true, name: true } },
+              id: true, variantName: true, sku: true,
+              product: { select: { id: true, name: true } },
             },
           },
+          store: { select: { id: true, name: true } },
         },
-        orderBy: { stock: 'asc' },
-        take: 20,
       }),
 
-      // ✅ Widened from 30 → 90 days, no status filter (counts ALL orders
+      // Widened from 30 → 90 days, no status filter (counts ALL orders
       // placed; revenue per-day still excludes CANCELLED/RETURNED below)
       prisma.order.findMany({
         where: {
@@ -111,7 +113,23 @@ export async function GET(request) {
       };
     });
 
-    // ✅ Daily chart data — 90 days, IST-aligned bucketing (matches
+    // Build low-stock alerts: filter to quantity <= lowStock, most urgent first, cap at 20
+    const lowStockAlerts = allInventoryRecords
+      .filter((inv) => inv.quantity <= inv.lowStock)
+      .sort((a, b) => a.quantity - b.quantity)
+      .slice(0, 20)
+      .map((inv) => ({
+        variantId:   inv.variant?.id,
+        variantName: inv.variant?.variantName,
+        sku:         inv.variant?.sku,
+        stock:       inv.quantity,
+        productId:   inv.variant?.product?.id,
+        productName: inv.variant?.product?.name,
+        storeName:   inv.store?.name || '',
+        storeId:     inv.storeId || '',
+      }));
+
+    // Daily chart data — 90 days, IST-aligned bucketing (matches
     // toISTDateKey used elsewhere in the reporting system).
     // Every order counts toward "orders placed"; revenue/commission
     // exclude CANCELLED/RETURNED per EXCLUDED_STATUSES.
@@ -150,12 +168,7 @@ export async function GET(request) {
           delivered: deliveredOrders, cancelled: cancelledOrders, returned: returnedOrders,
         },
         topStores, recentOrders, dailyData,
-        lowStockAlerts: lowStockVariants.map((v) => ({
-          variantId: v.id, color: v.color, size: v.size, sku: v.sku, stock: v.stock,
-          productId: v.productId, productName: v.product.name,
-          storeName: v.product.store?.name || '',
-          storeId:   v.product.store?.id || '',
-        })),
+        lowStockAlerts,
       },
     });
   } catch (error) {

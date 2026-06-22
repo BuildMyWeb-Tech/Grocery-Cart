@@ -157,6 +157,8 @@ export default function Orders() {
     }
   });
 
+  const activeFilterLabel = STATUS_FILTERS.find((f) => f.key === activeFilter)?.label || 'this status';
+
   if (!isLoaded || loading) return <Loading />;
 
   if (orders.length === 0) {
@@ -208,43 +210,55 @@ export default function Orders() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50/50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded inline-block mb-1">
-                        #{order.id.slice(0, 8)}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5">{order.store?.name}</p>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-14">
+                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                      <Package size={32} className="text-slate-300" />
+                      <p className="text-sm font-medium text-slate-500">No orders in "{activeFilterLabel}"</p>
+                      <p className="text-xs text-slate-400">Try a different filter above.</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center max-md:hidden">
-                    <p className="font-semibold text-slate-800">₹{order.total.toLocaleString('en-IN')}</p>
-                    <p className="text-xs text-slate-400">{order.paymentMethod}</p>
-                  </td>
-                  <td className="px-6 py-4 max-md:hidden">
-                    {order.address && (
-                      <p className="text-xs text-slate-600 max-w-[160px] truncate">
-                        {order.address.city}, {order.address.state}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 max-md:hidden">
-                    <StatusBadge status={order.status} />
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => { setSelectedOrder(order); setActiveTab('details'); setConfirmCancel(false); setConfirmReturn(false); }}
-                      className="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
-                    >
-                      View
-                    </button>
-                  </td>
                 </tr>
-              ))}
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-slate-50/50">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded inline-block mb-1">
+                          #{order.id.slice(0, 8)}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">{order.store?.name}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center max-md:hidden">
+                      <p className="font-semibold text-slate-800">₹{order.total.toLocaleString('en-IN')}</p>
+                      <p className="text-xs text-slate-400">{order.paymentMethod}</p>
+                    </td>
+                    <td className="px-6 py-4 max-md:hidden">
+                      {order.address && (
+                        <p className="text-xs text-slate-600 max-w-[160px] truncate">
+                          {order.address.city}, {order.address.state}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 max-md:hidden">
+                      <StatusBadge status={order.status} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => { setSelectedOrder(order); setActiveTab('details'); setConfirmCancel(false); setConfirmReturn(false); }}
+                        className="text-xs bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -334,9 +348,8 @@ export default function Orders() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-800 truncate">{item.variant?.product?.name}</p>
-                            <div className="flex gap-1.5 mt-0.5">
-                              <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{item.variant?.color}</span>
-                              <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{item.variant?.size}</span>
+                            <div className="flex gap-1.5 mt-0.5 items-center">
+                              <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-semibold">{item.variant?.variantName}</span>
                               <span className="text-xs text-slate-400 font-mono">{item.variant?.sku}</span>
                             </div>
                             {/* ✅ Rating UI — Write Review / show stars */}
@@ -355,7 +368,7 @@ export default function Orders() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold text-slate-800">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
-                            <p className="text-xs text-slate-400">×{item.quantity}</p>
+                            <p className="text-xs text-slate-400">₹{Number(item.price).toLocaleString('en-IN')} × {item.quantity}</p>
                           </div>
                         </div>
                       );

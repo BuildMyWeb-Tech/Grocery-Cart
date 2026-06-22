@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\admin\page.jsx
+// app/admin/page.jsx
 'use client';
 import Loading from '@/components/Loading';
 import OrdersAreaChart from '@/components/OrdersAreaChart';
@@ -16,9 +16,8 @@ export default function AdminDashboard() {
 
   const fetchDashboard = async () => {
     try {
-      // No Authorization header needed — server reads Clerk session cookie
       const res = await fetch('/api/admin/dashboard', {
-        credentials: 'include', // sends cookies automatically
+        credentials: 'include',
       });
       if (!res.ok) {
         const err = await res.json();
@@ -100,7 +99,9 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Order Pipeline */}
+      {/* Order Pipeline — full legacy status set shown deliberately; Admin retains
+          broader transition rights, so Shipped/Returned counts are meaningful here
+          even though they're not active store-facing steps. */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
         <h2 className="font-semibold text-slate-800 text-base mb-4">Order Pipeline</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
@@ -157,7 +158,7 @@ export default function AdminDashboard() {
                 <div key={alert.variantId} className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-100">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-slate-800 truncate">{alert.productName}</p>
-                    <p className="text-xs text-slate-500">{alert.color} / {alert.size} — {alert.storeName}</p>
+                    <p className="text-xs text-slate-500">{alert.variantName} — {alert.storeName}</p>
                   </div>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${alert.stock === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                     {alert.stock === 0 ? 'Out' : alert.stock}

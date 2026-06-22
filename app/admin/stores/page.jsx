@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\admin\stores\page.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\admin\stores\page.jsx
 'use client';
 import StoreInfo from '@/components/admin/StoreInfo';
 import Loading from '@/components/Loading';

@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\(public)\shop\page.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\(public)\shop\page.jsx
 'use client';
 import { Suspense, useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard';

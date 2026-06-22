@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\admin\coupons\page.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\admin\coupons\page.jsx
 'use client';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';

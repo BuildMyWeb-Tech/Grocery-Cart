@@ -20,31 +20,31 @@ function VariantViewer({ variants }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-100">
-            {['Color', 'Size', 'SKU', 'Price', 'Stock', 'Status'].map((h) => (
+            {['Variant', 'SKU', 'Price', 'Stock', 'Min Stock', 'Status'].map((h) => (
               <th key={h} className="text-left px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {variants.map((v, idx) => {
-            const isOut = v.stock === 0;
-            const isLow = v.stock > 0 && v.stock <= 5;
+            const qty = v.inventory?.quantity ?? 0;
+            const low = v.inventory?.lowStock ?? 10;
+            const isOut = qty === 0;
+            const isLow = qty > 0 && qty <= low;
             return (
               <tr key={v.id} className={`${idx < variants.length - 1 ? 'border-b border-slate-50' : ''}`}>
                 <td className="px-4 py-2.5">
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs">{v.color}</span>
-                </td>
-                <td className="px-4 py-2.5">
-                  <span className="inline-flex items-center justify-center w-9 h-7 bg-indigo-600 text-white rounded-md text-xs font-bold">{v.size}</span>
+                  <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md text-xs font-semibold">{v.variantName}</span>
                 </td>
                 <td className="px-4 py-2.5 font-mono text-xs text-slate-500">{v.sku}</td>
                 <td className="px-4 py-2.5 text-sm font-semibold text-green-700">₹{Number(v.price).toLocaleString('en-IN')}</td>
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-1.5">
-                    <span className={`text-sm font-semibold ${isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-slate-700'}`}>{v.stock}</span>
+                    <span className={`text-sm font-semibold ${isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-slate-700'}`}>{qty}</span>
                     {(isOut || isLow) && <AlertCircle size={12} className={isOut ? 'text-red-500' : 'text-amber-500'} />}
                   </div>
                 </td>
+                <td className="px-4 py-2.5 text-slate-500 text-sm">{low}</td>
                 <td className="px-4 py-2.5">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isOut ? 'bg-red-50 text-red-600' : isLow ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
                     {isOut ? 'Out' : isLow ? 'Low' : 'OK'}
@@ -65,9 +65,13 @@ function VariantViewer({ variants }) {
 function ProductRow({ product }) {
   const [expanded, setExpanded] = useState(false);
   const variants   = product.variants || [];
-  const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-  const hasLow     = variants.some((v) => v.stock > 0 && v.stock <= 5);
-  const hasOut     = variants.some((v) => v.stock === 0);
+  const totalStock = variants.reduce((sum, v) => sum + (v.inventory?.quantity || 0), 0);
+  const hasLow = variants.some((v) => {
+    const qty = v.inventory?.quantity ?? 0;
+    const low = v.inventory?.lowStock ?? 10;
+    return qty > 0 && qty <= low;
+  });
+  const hasOut = variants.some((v) => (v.inventory?.quantity ?? 0) === 0);
 
   return (
     <>
@@ -79,10 +83,7 @@ function ProductRow({ product }) {
                 <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
               </div>
             )}
-            <div>
-              <span className="font-medium text-slate-800 line-clamp-1 max-w-[140px] block text-sm">{product.name}</span>
-              {product.brand && <span className="text-xs text-slate-400">{product.brand}</span>}
-            </div>
+            <span className="font-medium text-slate-800 line-clamp-1 max-w-[140px] block text-sm">{product.name}</span>
           </div>
         </td>
         <td className="px-5 py-4">
@@ -100,14 +101,14 @@ function ProductRow({ product }) {
         </td>
         <td className="px-5 py-4">
           {variants.length > 0 && (
-            <button onClick={() => setExpanded((v) => !v)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 text-xs font-medium">
+            <button onClick={() => setExpanded((v) => !v)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-green-700 bg-green-50 hover:bg-green-100 text-xs font-medium">
               <Layers size={12} /> Variants {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </button>
           )}
         </td>
       </tr>
       {expanded && (
-        <tr className="bg-indigo-50/20">
+        <tr className="bg-green-50/20">
           <td colSpan={4} className="px-5 py-3">
             <VariantViewer variants={variants} />
           </td>
@@ -155,8 +156,7 @@ export default function EmployeeManageProductPage() {
   useEffect(() => { if (pageReady) fetchProducts(); }, [pageReady, fetchProducts]);
 
   const displayed = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.brand || '').toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(search.toLowerCase())
   );
 
   if (!pageReady && loading) return <div className="flex items-center justify-center py-20 gap-2 text-slate-400"><Loader2 size={20} className="animate-spin" /></div>;
@@ -185,12 +185,11 @@ export default function EmployeeManageProductPage() {
           </div>
         </div>
 
-        {/* Search */}
         <div className="mb-4">
           <div className="relative max-w-md">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input type="text" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-9 py-2.5 text-sm border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-100" />
+              className="w-full pl-9 pr-9 py-2.5 text-sm border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-green-100" />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X size={14} /></button>
             )}
@@ -222,7 +221,7 @@ export default function EmployeeManageProductPage() {
 
         <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-700 flex items-center gap-2">
           <PackageOpen size={15} className="text-blue-500 flex-shrink-0" />
-          Products are <strong className="mx-1">view-only</strong> in the employee portal. Click "Variants" to see color/size/SKU details.
+          Products are <strong className="mx-1">view-only</strong> in the employee portal. Click "Variants" to see variant/SKU details.
         </div>
       </div>
     </div>

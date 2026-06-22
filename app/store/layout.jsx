@@ -3,7 +3,7 @@ import StoreLayout from '@/components/store/StoreLayout';
 
 export const metadata = {
   title: 'KingCart. - Store Dashboard',
-  description: 'KingCart. - Store Dashboard',
+  description: 'GroceryCart. - Store Dashboard',
 };
 
 // No more SignedIn/SignedOut split.

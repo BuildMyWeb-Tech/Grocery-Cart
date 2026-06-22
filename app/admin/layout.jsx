@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\admin\layout.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\admin\layout.jsx
 // app/admin/layout.jsx
 // Switch from client-side AdminLayout component to server-side auth check.
 // This avoids the Bearer token problem entirely by reading the Clerk session
@@ -12,8 +12,8 @@ import Link from 'next/link';
 import { ShieldAlertIcon, ArrowRightIcon } from 'lucide-react';
 
 export const metadata = {
-  title: 'KingCart. - Admin Dashboard',
-  description: 'KingCart. - Admin Dashboard',
+  title: 'Grocery Cart. - Admin Dashboard',
+  description: 'Grocery Cart. - Admin Dashboard',
 };
 
 export default async function RootAdminLayout({ children }) {
@@ -27,7 +27,7 @@ export default async function RootAdminLayout({ children }) {
         <div className="text-center">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-slate-800">
-              <span className="text-green-600">King</span>cart
+              <span className="text-green-600">Grocery </span> Cart
               <span className="text-green-600 text-4xl">.</span>
             </h1>
             <p className="text-slate-500 text-sm mt-1">Admin Dashboard</p>

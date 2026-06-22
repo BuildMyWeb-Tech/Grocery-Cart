@@ -13,6 +13,7 @@ import {
 import { PERMISSIONS } from '@/middlewares/authEmployee';
 import OrderTimeline from '@/components/OrderTimeline';
 
+// Full enum kept for display — legacy/admin-set statuses must still render correctly
 const STATUS_CONFIG = {
   PENDING:          { label: 'Pending',          color: 'bg-blue-100 text-blue-700',      Icon: ClipboardList },
   CONFIRMED:        { label: 'Confirmed',        color: 'bg-violet-100 text-violet-700',   Icon: CheckCircle2 },
@@ -24,16 +25,14 @@ const STATUS_CONFIG = {
   RETURNED:         { label: 'Returned',         color: 'bg-purple-100 text-purple-700',   Icon: RotateCcw },
 };
 
-// Employee can update status if they have UPDATE_ORDER_STATUS permission
+// Grocery primary flow only — matches the same restriction applied to the store-side orders page
 const STORE_TRANSITIONS = {
   PENDING:          ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED:        ['PACKED', 'CANCELLED'],
-  PACKED:           ['SHIPPED', 'CANCELLED'],
-  SHIPPED:          ['OUT_FOR_DELIVERY'],
+  CONFIRMED:        ['PACKED',    'CANCELLED'],
+  PACKED:           ['OUT_FOR_DELIVERY', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['DELIVERED'],
-  DELIVERED:        ['RETURNED'],
+  DELIVERED:        [],
   CANCELLED:        [],
-  RETURNED:         [],
 };
 
 function StatusBadge({ status }) {
@@ -85,7 +84,6 @@ export default function EmployeeOrdersPage() {
       });
       toast.success(`Status → ${status}`);
       setSelectedOrder(null);
-      // Re-fetch
       const { data } = await axios.get('/api/store/orders', { headers: { Authorization: `Bearer ${token}` } });
       setOrders(data.orders || []);
     } catch (err) {
@@ -113,7 +111,7 @@ export default function EmployeeOrdersPage() {
     <div className="space-y-5 pb-20">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><ShoppingBag size={22} className="text-blue-600" /> Orders</h1>
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><ShoppingBag size={22} className="text-green-600" /> Orders</h1>
           <p className="text-slate-500 text-sm mt-1">{orders.length} orders found</p>
         </div>
       </div>
@@ -140,7 +138,7 @@ export default function EmployeeOrdersPage() {
                     <td className="px-5 py-3 text-xs text-slate-400 font-mono">#{order.id.slice(0, 8)}</td>
                     <td className="px-5 py-3 font-medium text-slate-700">{order.user?.name || 'Unknown'}</td>
                     <td className="px-5 py-3">
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{order.orderItems?.length || 0} items</span>
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{order.orderItems?.length || 0} items</span>
                     </td>
                     <td className="px-5 py-3 text-green-700 font-semibold">₹{order.total.toLocaleString('en-IN')}</td>
                     <td className="px-5 py-3"><StatusBadge status={order.status} /></td>
@@ -163,7 +161,7 @@ export default function EmployeeOrdersPage() {
       {selectedOrder && (
         <div onClick={() => setSelectedOrder(null)} className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-y-auto max-h-[90vh]">
-            <div className="bg-blue-600 text-white px-6 pt-6 pb-4 rounded-t-xl">
+            <div className="bg-green-600 text-white px-6 pt-6 pb-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Order #{selectedOrder.id.slice(0, 8)}</h2>
                 <button onClick={() => setSelectedOrder(null)} className="bg-white/20 p-1.5 rounded-full hover:bg-white/30"><X className="h-5 w-5" /></button>
@@ -171,7 +169,6 @@ export default function EmployeeOrdersPage() {
               <div className="mt-2"><StatusBadge status={selectedOrder.status} /></div>
             </div>
 
-            {/* Tabs */}
             <div className="flex border-b border-slate-200 px-6">
               {[
                 { key: 'details',  label: 'Details',  icon: <FileText size={14} /> },
@@ -179,7 +176,7 @@ export default function EmployeeOrdersPage() {
                 ...(canUpdate ? [{ key: 'actions', label: 'Update Status', icon: <ShoppingBag size={14} /> }] : []),
               ].map((tab) => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}>
+                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500'}`}>
                   {tab.icon} {tab.label}
                 </button>
               ))}
@@ -217,9 +214,8 @@ export default function EmployeeOrdersPage() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-800 truncate">{item.variant?.product?.name}</p>
-                          <div className="flex gap-1.5 mt-0.5">
-                            <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{item.variant?.color}</span>
-                            <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{item.variant?.size}</span>
+                          <div className="flex gap-1.5 mt-0.5 items-center">
+                            <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-semibold">{item.variant?.variantName}</span>
                           </div>
                         </div>
                         <div className="text-right">

@@ -17,7 +17,7 @@ async function resolveStoreAuth(request) {
 }
 
 // PATCH /api/store/product/variant?id=<variantId>
-// Update variant price, costPrice, stock, color, size, sku
+// Update variant name, price, costPrice, sku, current stock, minimum stock
 export async function PATCH(request) {
   try {
     const { storeId, employee, source } = await resolveStoreAuth(request);
@@ -45,8 +45,9 @@ export async function PATCH(request) {
     }
 
     const body = await request.json();
-    const { price, costPrice, stock, color, size, sku } = body;
+    const { price, costPrice, variantName, sku, stock, minStock } = body;
 
+    // Fields that live directly on ProductVariant
     const updateData = {};
 
     if (price !== undefined) {
@@ -65,14 +66,12 @@ export async function PATCH(request) {
       updateData.costPrice = num;
     }
 
-    if (stock !== undefined) {
-      const num = Math.max(0, Number(stock));
-      if (isNaN(num)) return NextResponse.json({ error: 'Invalid stock value' }, { status: 400 });
-      updateData.stock = num;
+    if (variantName !== undefined) {
+      if (!variantName.trim()) {
+        return NextResponse.json({ error: 'Variant name cannot be empty' }, { status: 400 });
+      }
+      updateData.variantName = variantName.trim();
     }
-
-    if (color !== undefined) updateData.color = color.trim();
-    if (size  !== undefined) updateData.size  = size.trim();
 
     if (sku !== undefined) {
       // Check SKU uniqueness
@@ -85,31 +84,50 @@ export async function PATCH(request) {
       updateData.sku = sku.trim();
     }
 
-    if (Object.keys(updateData).length === 0) {
+    // Stock and minimum stock live on Inventory, not ProductVariant
+    const inventoryUpdate = {};
+
+    if (stock !== undefined) {
+      const num = Math.max(0, Number(stock));
+      if (isNaN(num)) return NextResponse.json({ error: 'Invalid stock value' }, { status: 400 });
+      inventoryUpdate.quantity = num;
+    }
+
+    if (minStock !== undefined) {
+      const num = Math.max(0, Number(minStock));
+      if (isNaN(num)) return NextResponse.json({ error: 'Invalid minimum stock value' }, { status: 400 });
+      inventoryUpdate.lowStock = num;
+    }
+
+    if (Object.keys(updateData).length === 0 && Object.keys(inventoryUpdate).length === 0) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const updatedVariant = await tx.productVariant.update({
-        where: { id: variantId },
-        data: updateData,
-      });
-
-      // Sync inventory quantity if stock changed
-      if (stock !== undefined) {
-        await tx.inventory.upsert({
-          where: { variantId },
-          update: { quantity: updateData.stock },
-          create: {
-            variantId,
-            storeId,
-            quantity: updateData.stock,
-            lowStock: 10,
-          },
+    await prisma.$transaction(async (tx) => {
+      if (Object.keys(updateData).length > 0) {
+        await tx.productVariant.update({
+          where: { id: variantId },
+          data: updateData,
         });
       }
 
-      return updatedVariant;
+      if (Object.keys(inventoryUpdate).length > 0) {
+        await tx.inventory.upsert({
+          where: { variantId },
+          update: inventoryUpdate,
+          create: {
+            variantId,
+            storeId,
+            quantity: inventoryUpdate.quantity ?? 0,
+            lowStock: inventoryUpdate.lowStock ?? 10,
+          },
+        });
+      }
+    });
+
+    const updated = await prisma.productVariant.findUnique({
+      where: { id: variantId },
+      include: { inventory: true },
     });
 
     return NextResponse.json({ message: 'Variant updated successfully', variant: updated });
@@ -184,11 +202,11 @@ export async function POST(request) {
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
 
     const body = await request.json();
-    const { color, size, price, costPrice, sku, stock } = body;
+    const { variantName, price, costPrice, sku, stock, minStock } = body;
 
-    if (!color || !size || !sku || !price) {
+    if (!variantName || !sku || !price) {
       return NextResponse.json(
-        { error: 'Color, size, SKU and price are required' },
+        { error: 'Variant name, SKU and price are required' },
         { status: 400 }
       );
     }
@@ -203,12 +221,10 @@ export async function POST(request) {
       const created = await tx.productVariant.create({
         data: {
           productId,
-          color: color.trim(),
-          size: size.trim(),
+          variantName: variantName.trim(),
           price: Number(price),
           costPrice: Number(costPrice || 0),
           sku: sku.trim(),
-          stock: Math.max(0, Number(stock || 0)),
         },
       });
 
@@ -217,11 +233,14 @@ export async function POST(request) {
           variantId: created.id,
           storeId,
           quantity: Math.max(0, Number(stock || 0)),
-          lowStock: 10,
+          lowStock: Math.max(0, Number(minStock ?? 10)),
         },
       });
 
-      return created;
+      return tx.productVariant.findUnique({
+        where: { id: created.id },
+        include: { inventory: true },
+      });
     });
 
     return NextResponse.json(

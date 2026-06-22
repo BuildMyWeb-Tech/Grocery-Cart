@@ -42,13 +42,11 @@ export default function EmployeeSidebar({ storeInfo, employee, closeMobileMenu }
 
   return (
     <div className={`inline-flex h-full flex-col border-r border-slate-200 bg-white shadow-sm transition-all ${collapsed ? 'sm:w-20' : 'sm:min-w-60'} w-64`}>
-      {/* Mobile close */}
       <div className="flex justify-between items-center p-4 md:hidden border-b border-slate-100">
         <p className="font-medium text-slate-800">Menu</p>
         <button onClick={closeMobileMenu} className="p-1 rounded-md hover:bg-slate-100 text-slate-500"><X size={20} /></button>
       </div>
 
-      {/* Store info */}
       <div className={`flex ${collapsed ? 'flex-col' : 'flex-row'} gap-3 items-center pt-5 px-4 pb-3`}>
         <div className="relative flex-shrink-0">
           {storeInfo?.logo ? (
@@ -78,7 +76,6 @@ export default function EmployeeSidebar({ storeInfo, employee, closeMobileMenu }
 
       <div className="mx-4 border-t border-slate-100 mb-2" />
 
-      {/* Nav links */}
       <div className="flex-1 overflow-y-auto pb-2">
         {visibleLinks.map((link) => {
           const isActive = link.href === '/employee/dashboard'
@@ -87,16 +84,15 @@ export default function EmployeeSidebar({ storeInfo, employee, closeMobileMenu }
           return (
             <Link key={link.href} href={link.href}
               onClick={() => closeMobileMenu?.()}
-              className={`relative flex items-center gap-3 p-2.5 transition-all hover:bg-slate-50 ${collapsed ? 'justify-center' : 'pl-5 pr-3'} ${isActive ? 'bg-gradient-to-r from-blue-50 to-slate-50 font-medium text-slate-800' : 'text-slate-500 hover:text-slate-600'}`}>
-              <link.icon size={17} className={isActive ? 'text-blue-500' : ''} />
+              className={`relative flex items-center gap-3 p-2.5 transition-all hover:bg-slate-50 ${collapsed ? 'justify-center' : 'pl-5 pr-3'} ${isActive ? 'bg-gradient-to-r from-green-50 to-slate-50 font-medium text-slate-800' : 'text-slate-500 hover:text-slate-600'}`}>
+              <link.icon size={17} className={isActive ? 'text-green-600' : ''} />
               {!collapsed && <span className="truncate text-sm">{link.name}</span>}
-              {isActive && <span className="absolute bg-gradient-to-b from-blue-400 to-blue-600 right-0 top-0 bottom-0 w-1.5 rounded-l" />}
+              {isActive && <span className="absolute bg-gradient-to-b from-green-400 to-green-600 right-0 top-0 bottom-0 w-1.5 rounded-l" />}
             </Link>
           );
         })}
       </div>
 
-      {/* Logout */}
       <div className="border-t border-slate-100 p-3">
         <button onClick={handleLogout} className={`flex items-center gap-3 w-full p-2.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors text-sm ${collapsed ? 'justify-center' : 'pl-3'}`}>
           <LogOut size={15} />

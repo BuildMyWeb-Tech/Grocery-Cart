@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\BestSelling.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\BestSelling.jsx
 'use client'
 import Title from './Title'
 import ProductCard from './ProductCard'
@@ -17,11 +17,11 @@ const BestSelling = () => {
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center mb-2">
             <AwardIcon className="text-amber-500 mr-2" size={20} />
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Best Selling</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Best Selling Products</h2>
             <AwardIcon className="text-amber-500 ml-2" size={20} />
           </div>
           <p className="text-slate-500 mx-auto max-w-xl text-sm">
-            Showing {Math.min(products.length, displayQuantity)} of {products.length} products. Our customers' favorite picks!
+            Showing {Math.min(products.length, displayQuantity)} of {products.length} products. Most loved grocery products from trusted local stores.
           </p>
         </div>
         <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden sm:block">

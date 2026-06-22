@@ -39,7 +39,7 @@ const StoreNavbar = ({ storeInfo, mobileMenuOpen, setMobileMenuOpen, employee })
         </button>
 
         <Link href="/store" className="relative text-4xl font-semibold text-slate-700 flex items-center">
-          <span className="text-green-600">King</span>cart
+          <span className="text-green-600">Grocery</span>cart
           <span className="text-green-600 text-5xl leading-none">.</span>
           <div className="absolute text-xs font-semibold -top-1.5 -right-12 px-3 py-0.5 rounded-full flex items-center gap-1 text-white bg-gradient-to-r from-green-500 to-green-600 shadow-sm">
             <Store size={10} /> Store

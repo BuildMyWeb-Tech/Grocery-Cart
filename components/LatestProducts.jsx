@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\LatestProducts.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\LatestProducts.jsx
 'use client'
 import React from 'react'
 import Title from './Title'
@@ -18,11 +18,11 @@ const LatestProducts = () => {
                 <div className="text-center mb-6">
                     <div className="inline-flex items-center justify-center mb-2">
                         <SparklesIcon className="text-yellow-500 mr-2" size={20} />
-                        <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Latest Products</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Fresh Arrivals</h2>
                         <SparklesIcon className="text-yellow-500 ml-2" size={20} />
                     </div>
                     <p className="text-slate-500 mx-auto max-w-xl text-sm">
-                        Showing {Math.min(products.length, displayQuantity)} of {products.length} products. Discover our newest arrivals.
+                        Showing {Math.min(products.length, displayQuantity)} of {products.length} products. Recently added grocery products from local stores.
                     </p>
                 </div>
                 
@@ -60,7 +60,7 @@ const LatestProducts = () => {
                             <ProductCard 
                                 key={index} 
                                 product={product} 
-                                badgeText="New Arrival" 
+                                badgeText="Fresh Arrival" 
                                 badgeIcon={<ClockIcon size={12} />} 
                             />
                         ))
@@ -75,7 +75,7 @@ const LatestProducts = () => {
                     href="/shop" 
                     className="flex items-center justify-center gap-1.5 w-full py-3 px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
-                    View All Latest Products 
+                    View All Fresh Arrivals 
                     <ArrowRightIcon size={16} />
                 </Link>
             </div>

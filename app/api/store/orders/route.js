@@ -5,15 +5,15 @@ import verifyEmployeeToken, { hasPermission, PERMISSIONS } from '@/middlewares/a
 import { getAuth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+// Grocery primary flow only — Shipped/Returned are legacy values, not active store-facing steps
+// (matches app/api/orders/status/route.js and both Orders UIs)
 const STORE_TRANSITIONS = {
   PENDING:          ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED:        ['PACKED', 'CANCELLED'],
-  PACKED:           ['SHIPPED', 'CANCELLED'],
-  SHIPPED:          ['OUT_FOR_DELIVERY'],
+  CONFIRMED:        ['PACKED',    'CANCELLED'],
+  PACKED:           ['OUT_FOR_DELIVERY', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['DELIVERED'],
-  DELIVERED:        ['RETURNED'],
+  DELIVERED:        [],
   CANCELLED:        [],
-  RETURNED:         [],
 };
 
 const PRE_SHIPPED = new Set(['PENDING', 'CONFIRMED', 'PACKED']);
@@ -28,6 +28,7 @@ async function resolveStoreAuth(request) {
   return { storeId, source: 'owner' };
 }
 
+// Restore stock via Inventory — ProductVariant no longer has its own stock column
 async function restoreInventory(tx, orderId) {
   const order = await tx.order.findUnique({
     where: { id: orderId },
@@ -39,18 +40,12 @@ async function restoreInventory(tx, orderId) {
   if (!order) return;
 
   for (const item of order.orderItems) {
-    const variant = await tx.productVariant.findUnique({
-      where: { id: item.variantId },
-      select: { stock: true },
+    const inv = await tx.inventory.findUnique({
+      where: { variantId: item.variantId },
+      select: { quantity: true },
     });
-    if (!variant) continue;
-
-    const newStock = variant.stock + item.quantity;
-
-    await tx.productVariant.update({
-      where: { id: item.variantId },
-      data: { stock: newStock },
-    });
+    const currentQty = inv?.quantity ?? 0;
+    const newStock = currentQty + item.quantity;
 
     await tx.inventory.upsert({
       where: { variantId: item.variantId },
@@ -110,7 +105,7 @@ export async function GET(request) {
             include: {
               variant: {
                 select: {
-                  id: true, color: true, size: true, price: true, sku: true,
+                  id: true, variantName: true, price: true, sku: true,
                   product: { select: { id: true, name: true, images: true } },
                 },
               },
@@ -170,7 +165,7 @@ export async function POST(request) {
 
     if (status === 'CANCELLED' && !PRE_SHIPPED.has(order.status)) {
       return NextResponse.json(
-        { error: 'Orders can only be cancelled before they are shipped' },
+        { error: 'Orders can only be cancelled before they are out for delivery' },
         { status: 400 }
       );
     }

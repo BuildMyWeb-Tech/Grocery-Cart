@@ -2,11 +2,23 @@
 import prisma from '@/lib/prisma';
 import authAdmin from '@/middlewares/authAdmin';
 import authSeller from '@/middlewares/authSeller';
+import verifyEmployeeToken, { hasPermission, PERMISSIONS } from '@/middlewares/authEmployee';
 import { getAuth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { buildDateRange, round2, fmtDay, toISTDateKey, EXCLUDED_STATUSES } from '@/lib/reportUtils';
 
 async function resolveRole(request) {
+  // Check employee JWT first — Clerk's getAuth alone has no way to recognize
+  // an employee, so VIEW_REPORTS-permitted employees were always falling
+  // through to "Unauthorized" before this check existed.
+  const employee = verifyEmployeeToken(request);
+  if (employee) {
+    if (!hasPermission(employee, PERMISSIONS.VIEW_REPORTS)) {
+      return { role: null, storeId: null, permissionDenied: true };
+    }
+    return { role: 'STORE', storeId: employee.storeId };
+  }
+
   const { userId } = getAuth(request);
   if (!userId) return { role: null, storeId: null };
   const isAdminUser = await authAdmin(userId);
@@ -19,7 +31,8 @@ async function resolveRole(request) {
 // GET /api/reports/sales-trend
 export async function GET(request) {
   try {
-    const { role, storeId: myStoreId } = await resolveRole(request);
+    const { role, storeId: myStoreId, permissionDenied } = await resolveRole(request);
+    if (permissionDenied) return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(request.url);

@@ -27,6 +27,7 @@ export async function GET(request) {
 
     const [
       totalProducts,
+      activeProductsCount,
       totalOrders,
       totalCategories,
 
@@ -49,13 +50,14 @@ export async function GET(request) {
       // Recent ratings for this store
       recentRatings,
 
-      // Low stock variants
-      lowStockVariants,
+      // All inventory rows for this store — used for low/out-of-stock counts + alert list
+      inventoryRows,
 
       // Top selling variants this month
       topVariantsRaw,
     ] = await Promise.all([
       prisma.product.count({ where: { storeId } }),
+      prisma.product.count({ where: { storeId, status: 'ACTIVE' } }),
       prisma.order.count({ where: { storeId } }),
       prisma.category.count({ where: { storeId } }),
 
@@ -101,12 +103,21 @@ export async function GET(request) {
         take: 10,
       }),
 
-      // Low stock variants (stock <= 5)
-      prisma.productVariant.findMany({
-        where: { stock: { lte: 5 }, product: { storeId } },
-        include: { product: { select: { id: true, name: true } } },
-        orderBy: { stock: 'asc' },
-        take: 20,
+      // Inventory rows — Current Stock / Minimum Stock both live here now
+      prisma.inventory.findMany({
+        where: { storeId },
+        select: {
+          quantity: true,
+          lowStock: true,
+          variant: {
+            select: {
+              id: true,
+              variantName: true,
+              sku: true,
+              product: { select: { id: true, name: true } },
+            },
+          },
+        },
       }),
 
       // Top variants by quantity sold this month
@@ -127,6 +138,25 @@ export async function GET(request) {
         take: 10,
       }),
     ]);
+
+    // ── Stock-status derived counts (current stock vs each variant's own minimum) ──
+    const alertRows        = inventoryRows.filter((r) => r.quantity <= r.lowStock);
+    const outOfStockRows   = inventoryRows.filter((r) => r.quantity === 0);
+    const lowOnlyRows      = inventoryRows.filter((r) => r.quantity > 0 && r.quantity <= r.lowStock);
+    const lowStockProductIds    = new Set(lowOnlyRows.map((r) => r.variant.product.id));
+    const outOfStockProductIds  = new Set(outOfStockRows.map((r) => r.variant.product.id));
+
+    const lowStockAlerts = alertRows
+      .sort((a, b) => a.quantity - b.quantity)
+      .slice(0, 20)
+      .map((r) => ({
+        variantId:   r.variant.id,
+        variantName: r.variant.variantName,
+        sku:         r.variant.sku,
+        stock:       r.quantity,
+        productId:   r.variant.product.id,
+        productName: r.variant.product.name,
+      }));
 
     // Last 30 days daily chart
     const last30Orders = await prisma.order.findMany({
@@ -159,7 +189,7 @@ export async function GET(request) {
         ? await prisma.productVariant.findMany({
             where: { id: { in: variantIds } },
             select: {
-              id: true, color: true, size: true, sku: true,
+              id: true, variantName: true, sku: true,
               product: { select: { name: true, images: true } },
             },
           })
@@ -169,15 +199,14 @@ export async function GET(request) {
     const topVariants = topVariantsRaw.map((r) => {
       const detail = variantMap[r.variantId];
       return {
-        variantId:   r.variantId,
-        color:       detail?.color || '?',
-        size:        detail?.size  || '?',
-        sku:         detail?.sku   || '',
-        productName: detail?.product?.name || 'Unknown',
+        variantId:    r.variantId,
+        variantName:  detail?.variantName || '?',
+        sku:          detail?.sku   || '',
+        productName:  detail?.product?.name || 'Unknown',
         productImage: detail?.product?.images?.[0] || null,
-        totalQty:    r._sum.quantity || 0,
+        totalQty:     r._sum.quantity || 0,
         totalRevenue: round2(r._sum.price || 0),
-        orders:      r._count.orderId || 0,
+        orders:       r._count.orderId || 0,
       };
     });
 
@@ -187,6 +216,9 @@ export async function GET(request) {
     return NextResponse.json({
       dashboardData: {
         totalProducts,
+        activeProducts: activeProductsCount,
+        lowStockProductsCount: lowStockProductIds.size,
+        outOfStockProductsCount: outOfStockProductIds.size,
         totalOrders,
         totalCategories,
         totalCustomers: uniqueCustomers.length,
@@ -211,16 +243,7 @@ export async function GET(request) {
         dailyData,
         recentRatings,
         topVariants,
-
-        lowStockAlerts: lowStockVariants.map((v) => ({
-          variantId:   v.id,
-          color:       v.color,
-          size:        v.size,
-          sku:         v.sku,
-          stock:       v.stock,
-          productId:   v.productId,
-          productName: v.product.name,
-        })),
+        lowStockAlerts,
       },
     });
   } catch (error) {

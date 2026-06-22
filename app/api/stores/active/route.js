@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\api\stores\active\route.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\api\stores\active\route.js
 
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';

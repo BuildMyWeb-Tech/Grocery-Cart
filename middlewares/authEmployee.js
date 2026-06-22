@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\middlewares\authEmployee.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\middlewares\authEmployee.js
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'employee_jwt_secret_gocart_2025';

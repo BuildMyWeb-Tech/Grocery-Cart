@@ -2,6 +2,7 @@
 import prisma from '@/lib/prisma';
 import authAdmin from '@/middlewares/authAdmin';
 import authSeller from '@/middlewares/authSeller';
+import verifyEmployeeToken, { hasPermission, PERMISSIONS } from '@/middlewares/authEmployee';
 import { getAuth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import {
@@ -13,6 +14,17 @@ import {
 } from '@/lib/reportUtils';
 
 async function resolveRole(request) {
+  // Check employee JWT first — same gap as sales-trend/top-products: getAuth
+  // alone has no way to recognize an employee, so VIEW_REPORTS-permitted
+  // employees were always falling through to "Unauthorized" before this.
+  const employee = verifyEmployeeToken(request);
+  if (employee) {
+    if (!hasPermission(employee, PERMISSIONS.VIEW_REPORTS)) {
+      return { role: null, storeId: null, permissionDenied: true };
+    }
+    return { role: 'STORE', storeId: employee.storeId };
+  }
+
   const { userId } = getAuth(request);
   if (!userId) return { role: null, storeId: null };
   const isAdminUser = await authAdmin(userId);
@@ -25,7 +37,8 @@ async function resolveRole(request) {
 // GET /api/reports/summary
 export async function GET(request) {
   try {
-    const { role, storeId: myStoreId } = await resolveRole(request);
+    const { role, storeId: myStoreId, permissionDenied } = await resolveRole(request);
+    if (permissionDenied) return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
     if (!role) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
@@ -59,11 +72,11 @@ export async function GET(request) {
       _avg: { total: true },
     });
 
-    const revenue        = round2(agg._sum.total || 0);
-    const commissionEarned = round2(agg._sum.commissionAmt || 0);
-    const storeRevenue   = round2(revenue - commissionEarned);
-    const orderCount     = agg._count.id || 0;
-    const aov            = round2(agg._avg.total || 0);
+    const revenue           = round2(agg._sum.total || 0);
+    const commissionEarned  = round2(agg._sum.commissionAmt || 0);
+    const storeRevenue      = round2(revenue - commissionEarned);
+    const orderCount        = agg._count.id || 0;
+    const aov               = round2(agg._avg.total || 0);
 
     // Top store (admin only)
     let topStore = null;
@@ -120,6 +133,14 @@ export async function GET(request) {
         };
       }
     }
+
+    // NOTE: employeeBreakdown is intentionally NOT included here.
+    // app/store/analytics/page.jsx reads summary.employeeBreakdown to render
+    // a per-employee revenue table, but computing that requires attributing
+    // an order to a specific employee, and nothing reviewed so far (Order,
+    // OrderTimeline.changedBy) carries that link — changedBy stores a role
+    // label, not an employee id. Needs a schema field or a defined rule
+    // before this can be built; flagging rather than fabricating one.
 
     return NextResponse.json({
       summary: {

@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\(public)\wishlist\page.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\(public)\wishlist\page.jsx
 'use client';
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -195,7 +195,6 @@ export default function WishlistPage() {
                         <Eye size={12} /> View details
                       </Link>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">Select color & size on product page to add to cart</p>
                   </div>
                 </div>
 

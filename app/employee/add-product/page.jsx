@@ -16,8 +16,6 @@ export default function EmployeeAddProductPage() {
       if (!token) { setPageReady(true); return; }
 
       try {
-        // ✅ Always fetch FRESH permissions from DB — localStorage 'employeeData'
-        // can be stale if the owner granted permission after last login.
         const res  = await fetch('/api/store/employee-auth', {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -27,12 +25,9 @@ export default function EmployeeAddProductPage() {
           const isAllowed = data.employee.isOwner === true
             || data.employee.permissions?.[PERMISSIONS.ADD_PRODUCT] === true;
           setAllowed(isAllowed);
-
-          // Keep localStorage in sync for other pages that still read it
           localStorage.setItem('employeeData', JSON.stringify(data.employee));
         }
       } catch {
-        // fall back to cached data if the network call fails
         const empData = localStorage.getItem('employeeData');
         if (empData) {
           const parsed = JSON.parse(empData);
@@ -65,7 +60,7 @@ export default function EmployeeAddProductPage() {
           Adding products requires permission from your store owner.
         </p>
         <Link href="/employee/manage-product"
-          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
           <ArrowLeft size={16} /> View Products Instead
         </Link>
       </div>

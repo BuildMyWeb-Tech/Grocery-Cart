@@ -6,7 +6,7 @@ export default function SignUpPage() {
       <div className="text-center">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-800">
-            <span className="text-green-600">King</span>cart
+            <span className="text-green-600">Grocery</span>cart
             <span className="text-green-600 text-4xl">.</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1">Create your account</p>

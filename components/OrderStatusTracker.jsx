@@ -5,12 +5,13 @@ import {
   XCircle, RotateCcw,
 } from 'lucide-react';
 
-// New 8-step order enum
+// Grocery primary flow — Shipped removed as an active step (Packed → Out for Delivery directly).
+// Kept out of the array, not the codebase: an order can still land on RETURNED via Admin/customer
+// self-request, handled separately below.
 const MAIN_STEPS = [
   { key: 'PENDING',          label: 'Pending',          Icon: ClipboardList },
   { key: 'CONFIRMED',        label: 'Confirmed',        Icon: CheckCircle2 },
   { key: 'PACKED',           label: 'Packed',           Icon: Package },
-  { key: 'SHIPPED',          label: 'Shipped',          Icon: Truck },
   { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', Icon: Navigation },
   { key: 'DELIVERED',        label: 'Delivered',        Icon: PackageCheck },
 ];
@@ -48,14 +49,15 @@ export default function OrderStatusTracker({ status }) {
   const isReturnFlow   = status === 'RETURNED';
   const steps          = isReturnFlow ? [...MAIN_STEPS, ...RETURN_STEPS] : MAIN_STEPS;
   const currentColor   = STATUS_COLORS[status] || STATUS_COLORS.PENDING;
-  const currentStepIdx = steps.findIndex((s) => s.key === status);
+  // SHIPPED no longer appears as a step — if a legacy/admin-set order is sitting in SHIPPED,
+  // treat it visually as having reached Packed (closest prior step in the primary flow).
+  const effectiveKey   = status === 'SHIPPED' ? 'PACKED' : status;
+  const currentStepIdx = steps.findIndex((s) => s.key === effectiveKey);
 
   return (
     <div className="w-full py-4 px-2">
       <div className="relative flex items-start justify-between">
-        {/* Background line */}
         <div className="absolute top-5 left-0 right-0 h-1 bg-slate-100 z-0 mx-5" />
-        {/* Fill line */}
         {currentStepIdx > 0 && (
           <div className="absolute top-5 left-0 h-1 z-0 mx-5 transition-all duration-700"
             style={{ width: `calc(${(currentStepIdx / (steps.length - 1)) * 100}% - 2.5rem)`, backgroundColor: currentColor.active }} />

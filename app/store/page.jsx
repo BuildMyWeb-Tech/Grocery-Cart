@@ -1,4 +1,3 @@
-
 // app/store/page.jsx
 'use client';
 import Loading from '@/components/Loading';
@@ -8,6 +7,7 @@ import {
   IndianRupee, ShoppingBasket, Star, TrendingUp, RefreshCcw,
   Users, ExternalLink, ShoppingCart, Clock, Truck, CheckCircle2,
   XCircle, Package, Layers, CheckCircle, AlertTriangle, BarChart2, Navigation,
+  PackageX, ShieldCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -34,6 +34,7 @@ function StatCard({ title, value, icon: Icon, color, sub }) {
     blue:   { bg: 'bg-blue-50',   icon: 'bg-blue-100 text-blue-600',   border: 'border-blue-100',   val: 'text-blue-700' },
     green:  { bg: 'bg-green-50',  icon: 'bg-green-100 text-green-600', border: 'border-green-100',  val: 'text-green-700' },
     purple: { bg: 'bg-purple-50', icon: 'bg-purple-100 text-purple-600',border: 'border-purple-100',val: 'text-purple-700' },
+    violet: { bg: 'bg-violet-50', icon: 'bg-violet-100 text-violet-600',border: 'border-violet-100',val: 'text-violet-700' },
     amber:  { bg: 'bg-amber-50',  icon: 'bg-amber-100 text-amber-600', border: 'border-amber-100',  val: 'text-amber-700' },
     red:    { bg: 'bg-red-50',    icon: 'bg-red-100 text-red-600',     border: 'border-red-100',    val: 'text-red-700' },
     indigo: { bg: 'bg-indigo-50', icon: 'bg-indigo-100 text-indigo-600',border: 'border-indigo-100',val: 'text-indigo-700' },
@@ -167,19 +168,22 @@ export default function StoreDashboard() {
           <ShoppingCart size={14} /> Orders & Products
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <StatCard title="Total Products"   value={dash.totalProducts}   icon={ShoppingBasket} color="blue" />
-          <StatCard title="Total Categories" value={dash.totalCategories} icon={Layers}         color="indigo" />
-          <StatCard title="Total Orders"     value={dash.totalOrders}     icon={ShoppingCart}   color="purple" />
-          <StatCard title="Total Customers"  value={dash.totalCustomers}  icon={Users}          color="teal" />
-          <StatCard title="Today's Orders"   value={dash.todayOrders}     icon={TrendingUp}     color="orange" />
-          <StatCard title="Pending"          value={dash.orderStatus.pending}        icon={Clock}         color="amber" />
-          <StatCard title="Confirmed"        value={dash.orderStatus.confirmed}      icon={CheckCircle}   color="violet" sub="order" />
-          <StatCard title="Packed"           value={dash.orderStatus.packed}         icon={Package}       color="blue" />
-          <StatCard title="Shipped"          value={dash.orderStatus.shipped}        icon={Truck}         color="cyan" />
-          <StatCard title="Out for Delivery" value={dash.orderStatus.outForDelivery} icon={Navigation}    color="orange" />
-          <StatCard title="Delivered"        value={dash.orderStatus.delivered}      icon={CheckCircle2}  color="green" />
-          <StatCard title="Cancelled"        value={dash.orderStatus.cancelled}      icon={XCircle}       color="red" />
-          <StatCard title="Conversion Rate"  value={`${conversionRate}%`}            icon={TrendingUp}    color="slate" />
+          <StatCard title="Total Products"     value={dash.totalProducts}            icon={ShoppingBasket} color="blue" />
+          <StatCard title="Active Products"    value={dash.activeProducts}           icon={ShieldCheck}    color="green" />
+          <StatCard title="Low Stock Products" value={dash.lowStockProductsCount}    icon={AlertTriangle}  color="amber" />
+          <StatCard title="Out Of Stock"       value={dash.outOfStockProductsCount}  icon={PackageX}       color="red" />
+          <StatCard title="Total Categories"   value={dash.totalCategories}          icon={Layers}         color="indigo" />
+          <StatCard title="Total Orders"       value={dash.totalOrders}              icon={ShoppingCart}   color="purple" />
+          <StatCard title="Total Customers"    value={dash.totalCustomers}           icon={Users}          color="teal" />
+          <StatCard title="Today's Orders"     value={dash.todayOrders}              icon={TrendingUp}     color="orange" />
+          <StatCard title="Pending"            value={dash.orderStatus.pending}        icon={Clock}         color="amber" />
+          <StatCard title="Confirmed"          value={dash.orderStatus.confirmed}      icon={CheckCircle}   color="violet" sub="order" />
+          <StatCard title="Packed"             value={dash.orderStatus.packed}         icon={Package}       color="blue" />
+          <StatCard title="Shipped"            value={dash.orderStatus.shipped}        icon={Truck}         color="cyan" />
+          <StatCard title="Out for Delivery"   value={dash.orderStatus.outForDelivery} icon={Navigation}    color="orange" />
+          <StatCard title="Delivered"          value={dash.orderStatus.delivered}      icon={CheckCircle2}  color="green" />
+          <StatCard title="Cancelled"          value={dash.orderStatus.cancelled}      icon={XCircle}       color="red" />
+          <StatCard title="Conversion Rate"    value={`${conversionRate}%`}            icon={TrendingUp}    color="slate" />
         </div>
       </div>
 
@@ -265,7 +269,7 @@ export default function StoreDashboard() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="text-left px-5 py-3 text-slate-500 font-medium">Product</th>
-                  <th className="text-left px-5 py-3 text-slate-500 font-medium">Color / Size</th>
+                  <th className="text-left px-5 py-3 text-slate-500 font-medium">Variant</th>
                   <th className="text-left px-5 py-3 text-slate-500 font-medium">SKU</th>
                   <th className="text-right px-5 py-3 text-slate-500 font-medium">Qty Sold</th>
                   <th className="text-right px-5 py-3 text-slate-500 font-medium">Revenue</th>
@@ -281,10 +285,7 @@ export default function StoreDashboard() {
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex gap-1.5">
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs">{v.color}</span>
-                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold">{v.size}</span>
-                      </div>
+                      <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md text-xs font-semibold">{v.variantName}</span>
                     </td>
                     <td className="px-5 py-3 text-xs text-slate-500 font-mono">{v.sku}</td>
                     <td className="px-5 py-3 text-right font-semibold text-slate-700">{v.totalQty}</td>
@@ -313,7 +314,7 @@ export default function StoreDashboard() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
                   <th className="text-left px-5 py-3 text-slate-500 font-medium">Product</th>
-                  <th className="text-left px-5 py-3 text-slate-500 font-medium">Color / Size</th>
+                  <th className="text-left px-5 py-3 text-slate-500 font-medium">Variant</th>
                   <th className="text-left px-5 py-3 text-slate-500 font-medium">SKU</th>
                   <th className="text-right px-5 py-3 text-slate-500 font-medium">Stock</th>
                   <th className="text-right px-5 py-3 text-slate-500 font-medium">Status</th>
@@ -324,10 +325,7 @@ export default function StoreDashboard() {
                   <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/60">
                     <td className="px-5 py-3 font-medium text-slate-800">{v.productName}</td>
                     <td className="px-5 py-3">
-                      <div className="flex gap-1.5">
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs">{v.color}</span>
-                        <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-xs font-bold">{v.size}</span>
-                      </div>
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">{v.variantName}</span>
                     </td>
                     <td className="px-5 py-3 text-xs text-slate-500 font-mono">{v.sku}</td>
                     <td className="px-5 py-3 text-right">

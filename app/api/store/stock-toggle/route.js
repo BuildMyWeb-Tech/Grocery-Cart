@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\api\store\stock-toggle\route.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\api\store\stock-toggle\route.js
 import prisma from '@/lib/prisma';
 import authSeller from '@/middlewares/authSeller';
 import verifyEmployeeToken, { hasPermission, PERMISSIONS } from '@/middlewares/authEmployee';

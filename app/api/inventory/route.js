@@ -39,6 +39,10 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const filterStoreId = searchParams.get('storeId');
     const search        = searchParams.get('search');
+    const status        = searchParams.get('status');
+    const category      = searchParams.get('category');
+    const organic       = searchParams.get('organic');
+    const featured      = searchParams.get('featured');
     const lowStockOnly  = searchParams.get('lowStock') === 'true';
 
     const auth = await resolveStoreAuth(request);
@@ -55,15 +59,22 @@ export async function GET(request) {
       storeWhere = { storeId: auth.storeId };
     }
 
-    // Build variant/product search filter
+    // Build variant/product search + filter
     let variantWhere = { ...storeWhere };
 
-    if (search) {
-      variantWhere.variant = {
-        product: {
-          name: { contains: search, mode: 'insensitive' },
-        },
+    const productFilter = {};
+    if (search) productFilter.name = { contains: search, mode: 'insensitive' };
+    if (status) productFilter.status = status;
+    if (organic !== null) productFilter.isOrganic = organic === 'true';
+    if (featured !== null) productFilter.isFeatured = featured === 'true';
+    if (category) {
+      productFilter.categories = {
+        some: { category: { name: { contains: category, mode: 'insensitive' } } },
       };
+    }
+
+    if (Object.keys(productFilter).length > 0) {
+      variantWhere.variant = { product: productFilter };
     }
 
     const inventory = await prisma.inventory.findMany({
@@ -72,12 +83,10 @@ export async function GET(request) {
         variant: {
           select: {
             id: true,
-            color: true,
-            size: true,
+            variantName: true,
             price: true,
             costPrice: true,
             sku: true,
-            stock: true,
             product: {
               select: {
                 id: true,
@@ -85,6 +94,11 @@ export async function GET(request) {
                 slug: true,
                 images: true,
                 status: true,
+                isOrganic: true,
+                isFeatured: true,
+                categories: {
+                  select: { category: { select: { id: true, name: true } } },
+                },
                 store: {
                   select: { id: true, name: true, username: true },
                 },
@@ -99,7 +113,7 @@ export async function GET(request) {
       orderBy: { quantity: 'asc' },
     });
 
-    // Filter low stock on app level (quantity <= lowStock threshold)
+    // Filter low stock on app level (quantity <= lowStock threshold, excluding zero which has its own bucket)
     const filtered = lowStockOnly
       ? inventory.filter((inv) => inv.quantity <= inv.lowStock && inv.quantity > 0)
       : inventory;
@@ -152,23 +166,16 @@ export async function POST(request) {
     const newQty       = Math.max(0, Number(quantity ?? 0));
     const newLowStock  = Math.max(1, Number(lowStock ?? 10));
 
-    // Update both inventory record and variant stock in sync
-    const [inventory] = await prisma.$transaction([
-      prisma.inventory.upsert({
-        where: { variantId },
-        update: { quantity: newQty, lowStock: newLowStock },
-        create: {
-          variantId,
-          storeId: auth.storeId,
-          quantity: newQty,
-          lowStock: newLowStock,
-        },
-      }),
-      prisma.productVariant.update({
-        where: { id: variantId },
-        data: { stock: newQty },
-      }),
-    ]);
+    const inventory = await prisma.inventory.upsert({
+      where: { variantId },
+      update: { quantity: newQty, lowStock: newLowStock },
+      create: {
+        variantId,
+        storeId: auth.storeId,
+        quantity: newQty,
+        lowStock: newLowStock,
+      },
+    });
 
     return NextResponse.json({ message: 'Inventory updated', inventory });
   } catch (error) {
@@ -197,7 +204,7 @@ export async function PATCH(request) {
     // Verify variant belongs to this store
     const variant = await prisma.productVariant.findUnique({
       where: { id: variantId },
-      include: { product: { select: { storeId: true } } },
+      include: { product: { select: { storeId: true } }, inventory: true },
     });
 
     if (!variant) return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
@@ -211,7 +218,7 @@ export async function PATCH(request) {
       create: {
         variantId,
         storeId: auth.storeId,
-        quantity: variant.stock,
+        quantity: variant.inventory?.quantity ?? 0,
         lowStock: Math.max(1, Number(lowStock)),
       },
     });

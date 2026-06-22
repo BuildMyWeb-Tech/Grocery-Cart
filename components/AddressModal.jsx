@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\AddressModal.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\AddressModal.jsx
 'use client';
 import { addAddress } from '@/lib/features/address/addressSlice';
 import { XIcon } from 'lucide-react';

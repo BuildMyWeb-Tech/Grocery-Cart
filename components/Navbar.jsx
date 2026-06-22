@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\Navbar.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\Navbar.jsx
 'use client'
 import { PackageIcon, Search, ShoppingCart, HomeIcon, MenuIcon, XIcon, UserIcon, LayoutGridIcon, ShoppingBagIcon, Heart, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -60,7 +60,7 @@ const Navbar = () => {
                     <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
                         {/* Logo */}
                         <Link href="/" className="relative text-4xl font-bold text-slate-800 flex items-center">
-                            <span className="text-green-600">King</span>cart
+                            <span className="text-green-600">Grocery</span> Cart
                             <span className="text-green-600 text-5xl leading-0">.</span>
                             <Protect plan='plus'>
                                 <div className="absolute text-xs font-semibold -top-1 -right-8 px-3 p-0.5 rounded-full flex items-center gap-2 text-white bg-gradient-to-r from-green-500 to-green-600 shadow-sm">

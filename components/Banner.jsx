@@ -1,3 +1,4 @@
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\Banner.jsx
 'use client'
 import React from 'react'
 import toast from 'react-hot-toast';
@@ -13,7 +14,7 @@ export default function Banner() {
     };
 
     return isOpen && (
-        <div className="w-full px-6 py-1 font-medium text-sm text-white text-center bg-gradient-to-r from-violet-500 via-[#9938CA] to-[#E0724A]">
+        <div className="w-full px-6 py-1 font-medium text-sm text-white text-center bg-gradient-to-r from-green-600 via-emerald-600 to-green-700">
             <div className='flex items-center justify-between max-w-7xl  mx-auto'>
                 <p>Get 20% OFF on Your First Order!</p>
                 <div className="flex items-center space-x-6">

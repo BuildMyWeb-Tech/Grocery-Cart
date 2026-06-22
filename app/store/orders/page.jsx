@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+// Full enum kept for display (badges must still render legacy/admin-set statuses correctly)
 const STATUS_CONFIG = {
   PENDING:          { label: 'Pending',          color: 'bg-blue-100 text-blue-700 border-blue-200',         Icon: ClipboardList },
   CONFIRMED:        { label: 'Confirmed',        color: 'bg-violet-100 text-violet-700 border-violet-200',    Icon: CheckCircle2 },
@@ -24,25 +25,24 @@ const STATUS_CONFIG = {
   RETURNED:         { label: 'Returned',         color: 'bg-purple-100 text-purple-700 border-purple-200',    Icon: RotateCcw },
 };
 
+// Grocery primary flow only — Shipped/Returned are legacy, not active store-facing steps
+const PRIMARY_STATUS_KEYS = ['PENDING', 'CONFIRMED', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+
 const STORE_TRANSITIONS = {
   PENDING:          ['CONFIRMED', 'CANCELLED'],
   CONFIRMED:        ['PACKED',    'CANCELLED'],
-  PACKED:           ['SHIPPED',   'CANCELLED'],
-  SHIPPED:          ['OUT_FOR_DELIVERY'],
+  PACKED:           ['OUT_FOR_DELIVERY', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['DELIVERED'],
-  DELIVERED:        ['RETURNED'],
+  DELIVERED:        [],
   CANCELLED:        [],
-  RETURNED:         [],
 };
 
 // Primary action for quick update button in table
 const PRIMARY_NEXT = {
   PENDING:   'CONFIRMED',
   CONFIRMED: 'PACKED',
-  PACKED:    'SHIPPED',
-  SHIPPED:   'OUT_FOR_DELIVERY',
+  PACKED:    'OUT_FOR_DELIVERY',
   OUT_FOR_DELIVERY: 'DELIVERED',
-  DELIVERED: 'RETURNED',   // ✅ surfaces "Mark Returned" quick action
 };
 
 function StatusBadge({ status }) {
@@ -69,11 +69,10 @@ export default function StoreOrders() {
   const [updating,      setUpdating]      = useState(false);
   const LIMIT = 20;
 
-  // Support both Clerk token and employee JWT
   const getAuthHeaders = useCallback(async () => {
     const empToken = typeof window !== 'undefined' ? localStorage.getItem('employeeToken') : null;
     if (empToken) return { Authorization: `Bearer ${empToken}` };
-    return {};  // use credentials:include for Clerk
+    return {};
   }, [getToken]);
 
   const fetchOrders = useCallback(async () => {
@@ -144,10 +143,10 @@ export default function StoreOrders() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 className="text-2xl md:text-3xl text-slate-800 font-bold flex items-center gap-2">
-          <Package className="h-7 w-7 text-blue-600" /> Order Management
+          <Package className="h-7 w-7 text-green-600" /> Order Management
         </h1>
         <div className="flex items-center gap-3">
-          <button onClick={fetchOrders} className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg">
+          <button onClick={fetchOrders} className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg">
             <RefreshCw size={13} /> Refresh
           </button>
           <button onClick={exportExcel} className="flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-lg text-sm">
@@ -163,7 +162,7 @@ export default function StoreOrders() {
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white outline-none">
             <option value="ALL">All Statuses</option>
-            {Object.entries(STATUS_CONFIG).map(([key, { label }]) => <option key={key} value={key}>{label}</option>)}
+            {PRIMARY_STATUS_KEYS.map((key) => <option key={key} value={key}>{STATUS_CONFIG[key].label}</option>)}
           </select>
           <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none" />
           <span className="text-slate-400 text-xs">to</span>
@@ -194,7 +193,7 @@ export default function StoreOrders() {
                     const nextStatus = PRIMARY_NEXT[order.status];
                     const nextCfg   = nextStatus ? STATUS_CONFIG[nextStatus] : null;
                     return (
-                      <tr key={order.id} className="hover:bg-blue-50/20 transition-colors">
+                      <tr key={order.id} className="hover:bg-green-50/20 transition-colors">
                         <td className="px-4 py-3">
                           <span className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                             #{order.id.slice(0, 8)}
@@ -205,7 +204,7 @@ export default function StoreOrders() {
                           {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{order.orderItems?.length || 0} items</span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{order.orderItems?.length || 0} items</span>
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-800">₹{order.total.toLocaleString('en-IN')}</td>
                         <td className="px-4 py-3">
@@ -216,12 +215,10 @@ export default function StoreOrders() {
                         <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            {/* View details button */}
                             <button onClick={() => { setSelectedOrder(order); setActiveTab('details'); }}
                               className="p-2 bg-blue-50 rounded-lg text-blue-600 hover:bg-blue-100 border border-blue-200" title="View Details">
                               <Eye size={15} />
                             </button>
-                            {/* Quick update button — only if there's a next status */}
                             {nextCfg && (
                               <button
                                 onClick={() => {
@@ -248,7 +245,7 @@ export default function StoreOrders() {
           <div className="flex items-center justify-end gap-2 mt-4">
             <button onClick={() => setPage(1)} disabled={page === 1} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronsLeft size={18} /></button>
             <button onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronLeft size={18} /></button>
-            <span className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">{page} / {totalPages || 1}</span>
+            <span className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">{page} / {totalPages || 1}</span>
             <button onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page >= totalPages} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronRight size={18} /></button>
             <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronsRight size={18} /></button>
           </div>
@@ -260,8 +257,7 @@ export default function StoreOrders() {
         <div onClick={() => setSelectedOrder(null)} className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-y-auto max-h-[90vh]">
 
-            {/* Modal Header — blue matching screenshots */}
-            <div className="bg-blue-600 text-white px-6 pt-6 pb-4 rounded-t-xl">
+            <div className="bg-green-600 text-white px-6 pt-6 pb-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Order #{selectedOrder.id.slice(0, 8)}</h2>
                 <button onClick={() => setSelectedOrder(null)} className="bg-white/20 p-1.5 rounded-full hover:bg-white/30">
@@ -270,11 +266,10 @@ export default function StoreOrders() {
               </div>
               <div className="mt-2 flex items-center gap-3">
                 <StatusBadge status={selectedOrder.status} />
-                <span className="text-xs text-blue-200">{selectedOrder.store?.name}</span>
+                <span className="text-xs text-green-100">{selectedOrder.store?.name}</span>
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="flex border-b border-slate-200 px-6">
               {[
                 { key: 'details',  label: 'Details',  icon: <FileText size={14} /> },
@@ -282,14 +277,13 @@ export default function StoreOrders() {
                 { key: 'actions',  label: 'Update',   icon: <Clock size={14} /> },
               ].map((tab) => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
                   {tab.icon} {tab.label}
                 </button>
               ))}
             </div>
 
             <div className="p-6">
-              {/* Details Tab */}
               {activeTab === 'details' && (
                 <>
                   <div className="grid grid-cols-2 gap-4 mb-5">
@@ -322,15 +316,14 @@ export default function StoreOrders() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-800 truncate">{item.variant?.product?.name}</p>
-                          <div className="flex gap-1.5 mt-0.5">
-                            <span className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{item.variant?.color}</span>
-                            <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{item.variant?.size}</span>
+                          <div className="flex gap-1.5 mt-0.5 items-center">
+                            <span className="text-xs bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-semibold">{item.variant?.variantName}</span>
                             <span className="text-xs text-slate-400 font-mono">{item.variant?.sku}</span>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-semibold text-slate-800">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
-                          <p className="text-xs text-slate-400">×{item.quantity}</p>
+                          <p className="text-xs text-slate-400">₹{item.price.toLocaleString('en-IN')} × {item.quantity}</p>
                         </div>
                       </div>
                     ))}
@@ -338,10 +331,8 @@ export default function StoreOrders() {
                 </>
               )}
 
-              {/* Timeline Tab */}
               {activeTab === 'timeline' && <OrderTimeline timeline={selectedOrder.timeline || []} />}
 
-              {/* Update Tab */}
               {activeTab === 'actions' && (
                 <div>
                   <div className="mb-4">

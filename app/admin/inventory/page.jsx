@@ -9,19 +9,16 @@ import {
 
 const PAGE_SIZE = 20;
 
-function StockBadge({ quantity, lowStock }) {
-  if (quantity === 0) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600"><XCircle size={12} /> Out of Stock</span>;
-  if (quantity < lowStock) return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600"><AlertTriangle size={12} /> Low Stock</span>;
+function StockBadge({ status }) {
+  if (status === 'OUT_OF_STOCK') return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600"><XCircle size={12} /> Out of Stock</span>;
+  if (status === 'LOW_STOCK') return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600"><AlertTriangle size={12} /> Low Stock</span>;
   return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700"><CheckCircle size={12} /> In Stock</span>;
 }
 
 function VisibilityBadge({ status }) {
-  const isActive = status === 'ACTIVE';
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${isActive ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-      {isActive ? 'Active' : 'Inactive'}
-    </span>
-  );
+  if (status === 'ACTIVE') return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">Active</span>;
+  if (status === 'OUT_OF_STOCK') return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600">Out Of Stock</span>;
+  return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Inactive</span>;
 }
 
 const SORT_OPTIONS = [
@@ -63,10 +60,11 @@ export default function AdminInventoryPage() {
       id:          inv.id,
       storeName:   inv.variant?.product?.store?.name || inv.store?.name || '—',
       productName: inv.variant?.product?.name || '—',
-      colorSize:   `${inv.variant?.color || ''} / ${inv.variant?.size || ''}`,
+      variantName: inv.variant?.variantName || '—',
       sku:         inv.variant?.sku || '—',
       quantity:    inv.quantity,
       lowStock:    inv.lowStock,
+      stockStatus: inv.stockStatus,
       status:      inv.variant?.product?.status || 'ACTIVE',
       updatedAt:   inv.updatedAt,
     }));
@@ -82,8 +80,8 @@ export default function AdminInventoryPage() {
         row.sku.toLowerCase().includes(q)
       );
     }
-    if (filter === 'out')      r = r.filter((row) => row.quantity === 0);
-    else if (filter === 'low') r = r.filter((row) => row.quantity > 0 && row.quantity < row.lowStock);
+    if (filter === 'out')      r = r.filter((row) => row.stockStatus === 'OUT_OF_STOCK');
+    else if (filter === 'low') r = r.filter((row) => row.stockStatus === 'LOW_STOCK');
     else if (filter === 'inactive') r = r.filter((row) => row.status !== 'ACTIVE');
 
     return [...r].sort((a, b) => {
@@ -106,16 +104,16 @@ export default function AdminInventoryPage() {
     else { setSortKey(key); setSortDir('asc'); }
   };
 
-  const outCount = rows.filter((r) => r.quantity === 0).length;
-  const lowCount = rows.filter((r) => r.quantity > 0 && r.quantity < r.lowStock).length;
-  const okCount  = rows.filter((r) => r.quantity >= r.lowStock).length;
+  const outCount = rows.filter((r) => r.stockStatus === 'OUT_OF_STOCK').length;
+  const lowCount = rows.filter((r) => r.stockStatus === 'LOW_STOCK').length;
+  const okCount  = rows.filter((r) => r.stockStatus === 'IN_STOCK').length;
 
   return (
     <div className="text-slate-500 pt-4 md:p-6 max-w-7xl mx-auto">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl text-slate-800 font-bold flex items-center gap-2">
-            <Package className="h-7 w-7 text-indigo-600" /> Inventory
+            <Package className="h-7 w-7 text-green-600" /> Inventory
           </h1>
           <p className="text-slate-500 mt-1 text-sm">Stock levels across all stores</p>
         </div>
@@ -143,7 +141,7 @@ export default function AdminInventoryPage() {
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input type="text" placeholder="Search by product, store, or SKU..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-100" />
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-green-100" />
         </div>
         <div className="flex gap-2 flex-wrap">
           {[
@@ -153,7 +151,7 @@ export default function AdminInventoryPage() {
             { key: 'inactive', label: '◌ Inactive' },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFilter(key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === key ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === key ? 'bg-green-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
               {label}
             </button>
           ))}
@@ -174,7 +172,7 @@ export default function AdminInventoryPage() {
                   {[
                     { key: 'storeName',   label: 'Store Name' },
                     { key: 'productName', label: 'Product Name' },
-                    { key: 'colorSize',   label: 'Color / Size', sortable: false },
+                    { key: 'variantName', label: 'Variant', sortable: false },
                     { key: 'sku',         label: 'SKU', sortable: false },
                     { key: 'quantity',    label: 'Stock' },
                     { key: 'lowStock',    label: 'Low Stock' },
@@ -187,7 +185,7 @@ export default function AdminInventoryPage() {
                       ) : (
                         <button onClick={() => toggleSort(col.key)} className="flex items-center gap-1 hover:text-slate-800 transition-colors">
                           {col.label}
-                          <ArrowUpDown size={11} className={sortKey === col.key ? 'text-indigo-600' : 'text-slate-300'} />
+                          <ArrowUpDown size={11} className={sortKey === col.key ? 'text-green-600' : 'text-slate-300'} />
                         </button>
                       )}
                     </th>
@@ -196,17 +194,13 @@ export default function AdminInventoryPage() {
               </thead>
               <tbody>
                 {pageRows.map((row, idx) => (
-                  <tr key={row.id} className={`border-b border-slate-50 hover:bg-slate-50/70 transition-colors ${row.quantity === 0 ? 'bg-red-50/30' : row.quantity < row.lowStock ? 'bg-amber-50/30' : ''} ${idx === pageRows.length - 1 ? 'border-b-0' : ''}`}>
+                  <tr key={row.id} className={`border-b border-slate-50 hover:bg-slate-50/70 transition-colors ${row.stockStatus === 'OUT_OF_STOCK' ? 'bg-red-50/30' : row.stockStatus === 'LOW_STOCK' ? 'bg-amber-50/30' : ''} ${idx === pageRows.length - 1 ? 'border-b-0' : ''}`}>
                     <td className="px-5 py-4 font-medium text-slate-700">
                       <span className="inline-flex items-center gap-1.5"><Store size={13} className="text-slate-400" /> {row.storeName}</span>
                     </td>
                     <td className="px-5 py-4 font-medium text-slate-800">{row.productName}</td>
                     <td className="px-5 py-4">
-                      <div className="flex gap-1.5">
-                        {row.colorSize.split(' / ').map((v, i) => v && (
-                          <span key={i} className={`px-2 py-0.5 rounded text-xs ${i === 0 ? 'bg-slate-100 text-slate-700' : 'bg-indigo-100 text-indigo-700 font-bold'}`}>{v}</span>
-                        ))}
-                      </div>
+                      <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md text-xs font-semibold">{row.variantName}</span>
                     </td>
                     <td className="px-5 py-4 font-mono text-xs text-slate-500">{row.sku}</td>
                     <td className="px-5 py-4">
@@ -215,7 +209,7 @@ export default function AdminInventoryPage() {
                     <td className="px-5 py-4 text-slate-600">{row.lowStock}</td>
                     <td className="px-5 py-4">
                       <div className="flex flex-col gap-1.5">
-                        <StockBadge quantity={row.quantity} lowStock={row.lowStock} />
+                        <StockBadge status={row.stockStatus} />
                         <VisibilityBadge status={row.status} />
                       </div>
                     </td>
@@ -238,7 +232,7 @@ export default function AdminInventoryPage() {
                 className="p-1.5 border border-slate-200 rounded-lg bg-white disabled:opacity-50 hover:bg-slate-50">
                 <ChevronLeft size={16} />
               </button>
-              <span className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-medium">{page} / {totalPages}</span>
+              <span className="px-3 py-1 bg-green-600 text-white rounded-lg text-xs font-medium">{page} / {totalPages}</span>
               <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
                 className="p-1.5 border border-slate-200 rounded-lg bg-white disabled:opacity-50 hover:bg-slate-50">
                 <ChevronRight size={16} />

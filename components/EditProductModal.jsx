@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\EditProductModal.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\EditProductModal.jsx
 'use client';
 
 import { useState, useEffect } from 'react';

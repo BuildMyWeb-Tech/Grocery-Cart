@@ -1,148 +1,76 @@
-// 'use client'
-// import Counter from "@/components/Counter";
-// import OrderSummary from "@/components/OrderSummary";
-// import PageTitle from "@/components/PageTitle";
-// import { removeFromCart } from "@/lib/features/cart/cartSlice";
-// import { Trash2Icon, ShoppingBagIcon, ArrowLeftIcon } from "lucide-react";
-// import Image from "next/image";
-// import { useEffect, useState } from "react";
-// import { useDispatch, useSelector } from "react-redux";
-// import Link from "next/link";
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\(public)\about\page.jsx
+import Link from 'next/link'
+import { ourSpecsData } from '@/assets/assets'
+import { ArrowRightIcon, StoreIcon } from 'lucide-react'
 
-// export default function Cart() {
-//     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
-    
-//     const { cartItems } = useSelector(state => state.cart);
-//     const products = useSelector(state => state.product.list);
+export default function AboutPage() {
+    return (
+        <div className="min-h-screen bg-slate-50 py-16 px-4">
+            <div className="max-w-5xl mx-auto">
 
-//     const dispatch = useDispatch();
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h1 className="text-3xl sm:text-4xl font-semibold text-slate-800">
+                        Welcome To <span className="text-green-600">Grocery Cart</span>
+                    </h1>
+                    <p className="text-slate-500 mt-4 max-w-2xl mx-auto">
+                        Grocery Cart is a multi-vendor grocery marketplace connecting customers with trusted local grocery stores. Buy fresh vegetables, fruits, grocery essentials, and organic products from multiple stores in one convenient platform. Enjoy a smooth shopping experience with secure payments and trusted sellers.
+                    </p>
+                </div>
 
-//     const [cartArray, setCartArray] = useState([]);
-//     const [totalPrice, setTotalPrice] = useState(0);
+                {/* Mission */}
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-8 mb-12">
+                    <h2 className="text-xl font-semibold text-slate-800 mb-3">Our Mission</h2>
+                    <p className="text-slate-600">
+                        We believe grocery shopping should be simple, fresh, and reliable. Grocery Cart brings together local stores and sellers on a single platform, so you can shop fruits, vegetables, organic produce, and everyday essentials without compromising on quality or convenience. Every store on our platform is reviewed and approved before going live, so you always know who you're buying from.
+                    </p>
+                </div>
 
-//     const createCartArray = () => {
-//         setTotalPrice(0);
-//         const cartArray = [];
-//         for (const [key, value] of Object.entries(cartItems)) {
-//             const product = products.find(product => product.id === key);
-//             if (product) {
-//                 cartArray.push({
-//                     ...product,
-//                     quantity: value,
-//                 });
-//                 setTotalPrice(prev => prev + product.price * value);
-//             }
-//         }
-//         setCartArray(cartArray);
-//     }
+                {/* Why Choose Us */}
+                <div className="mb-12">
+                    <h2 className="text-xl font-semibold text-slate-800 mb-6 text-center">Why Shop With Us</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {ourSpecsData.map((spec, index) => (
+                            <div key={index} className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 text-center">
+                                <div
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4"
+                                    style={{ background: `linear-gradient(135deg, ${spec.accent}, ${spec.accent}CC)` }}
+                                >
+                                    <spec.icon size={22} className="text-white" />
+                                </div>
+                                <h3 className="text-sm font-semibold text-slate-800 mb-1">{spec.title}</h3>
+                                <p className="text-xs text-slate-500">{spec.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-//     const handleDeleteItemFromCart = (productId) => {
-//         dispatch(removeFromCart(productId))
-//     }
+                {/* Seller CTA */}
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-8 text-center text-white mb-12">
+                    <StoreIcon size={32} className="mx-auto mb-3" />
+                    <h2 className="text-xl font-semibold mb-2">Own A Grocery Store?</h2>
+                    <p className="text-green-50 mb-5 max-w-lg mx-auto">
+                        Join Grocery Cart as a seller and reach more customers in your area.
+                    </p>
+                    <Link
+                        href="/create-store"
+                        className="inline-flex items-center gap-2 bg-white text-green-700 px-6 py-2.5 rounded-lg font-medium hover:bg-green-50 transition-colors"
+                    >
+                        Start Selling <ArrowRightIcon size={16} />
+                    </Link>
+                </div>
 
-//     useEffect(() => {
-//         if (products.length > 0) {
-//             createCartArray();
-//         }
-//     }, [cartItems, products]);
+                {/* Shop CTA */}
+                <div className="text-center">
+                    <Link
+                        href="/shop"
+                        className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-7 py-3 rounded-lg font-medium transition-colors"
+                    >
+                        Start Shopping <ArrowRightIcon size={16} />
+                    </Link>
+                </div>
 
-//     return cartArray.length > 0 ? (
-//         <div className="min-h-screen mx-6 text-slate-800 pb-16">
-//             <div className="max-w-7xl mx-auto">
-//                 {/* Title */}
-//                 <PageTitle heading="My Cart" text={`${cartArray.length} ${cartArray.length === 1 ? 'item' : 'items'} in your cart`} linkText="Continue Shopping" />
-
-//                 {/* Breadcrumb - New Addition */}
-//                 <div className="mb-6 flex items-center text-sm text-slate-500">
-//                     <Link href="/" className="hover:text-slate-800 transition-colors">Home</Link>
-//                     <span className="mx-2">/</span>
-//                     <span className="font-medium text-slate-700">Shopping Cart</span>
-//                 </div>
-
-//                 <div className="flex items-start justify-between gap-8 max-lg:flex-col">
-//                     {/* Cart Table */}
-//                     <div className="w-full flex-1 bg-white rounded-xl shadow-sm overflow-hidden">
-//                         <table className="w-full max-w-4xl text-slate-600 table-auto">
-//                             <thead className="bg-slate-50 text-slate-700">
-//                                 <tr className="max-sm:text-sm">
-//                                     <th className="text-left py-4 px-4 font-semibold">Product</th>
-//                                     <th className="py-4 font-semibold">Quantity</th>
-//                                     <th className="py-4 font-semibold">Total Price</th>
-//                                     <th className="py-4 max-md:hidden font-semibold">Remove</th>
-//                                 </tr>
-//                             </thead>
-//                             <tbody>
-//                                 {cartArray.map((item, index) => (
-//                                     <tr 
-//                                         key={index} 
-//                                         className={`space-x-2 hover:bg-slate-50 transition-colors ${index !== cartArray.length - 1 ? 'border-b border-slate-100' : ''}`}
-//                                     >
-//                                         <td className="flex gap-4 my-4 px-4 py-2">
-//                                             <div className="flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 size-20 rounded-lg shadow-sm group">
-//                                                 <Image 
-//                                                     src={item.images[0]} 
-//                                                     className="h-16 w-auto object-contain group-hover:scale-105 transition-transform" 
-//                                                     alt={item.name} 
-//                                                     width={60} 
-//                                                     height={60}
-//                                                 />
-//                                             </div>
-//                                             <div className="flex flex-col justify-center">
-//                                                 <p className="font-medium text-slate-800 hover:text-green-600 transition-colors cursor-pointer max-sm:text-sm">{item.name}</p>
-//                                                 <div className="flex items-center gap-2 mt-1">
-//                                                     <span className="text-xs px-2 py-0.5 bg-slate-100 rounded text-slate-500">{item.category}</span>
-//                                                     <span className="md:hidden text-xs text-red-500 flex items-center" onClick={() => handleDeleteItemFromCart(item.id)}>
-//                                                         <Trash2Icon size={12} className="mr-1" /> Remove
-//                                                     </span>
-//                                                 </div>
-//                                                 <p className="mt-1 font-medium text-slate-700">{currency}{item.price.toLocaleString()}</p>
-//                                             </div>
-//                                         </td>
-//                                         <td className="text-center">
-//                                             <div className="flex justify-center">
-//                                                 <Counter productId={item.id} />
-//                                             </div>
-//                                         </td>
-//                                         <td className="text-center font-medium">{currency}{(item.price * item.quantity).toLocaleString()}</td>
-//                                         <td className="text-center max-md:hidden">
-//                                             <button 
-//                                                 onClick={() => handleDeleteItemFromCart(item.id)} 
-//                                                 className="text-red-500 hover:bg-red-50 p-2.5 rounded-full active:scale-95 transition-all"
-//                                             >
-//                                                 <Trash2Icon size={18} />
-//                                             </button>
-//                                         </td>
-//                                     </tr>
-//                                 ))}
-//                             </tbody>
-//                         </table>
-
-//                         {/* Mobile: Continue Shopping */}
-//                         <div className="md:hidden p-4 pt-0">
-//                             <Link href="/shop" className="flex items-center justify-center gap-2 text-sm text-slate-600 py-3 px-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-//                                 <ArrowLeftIcon size={16} />
-//                                 Continue Shopping
-//                             </Link>
-//                         </div>
-//                     </div>
-                    
-//                     {/* Order Summary */}
-//                     <OrderSummary totalPrice={totalPrice} items={cartArray} />
-//                 </div>
-//             </div>
-//         </div>
-//     ) : (
-//         <div className="min-h-[80vh] mx-6 flex flex-col items-center justify-center text-slate-400">
-//             <ShoppingBagIcon size={80} className="text-slate-300 mb-6" strokeWidth={1} />
-//             <h1 className="text-2xl sm:text-4xl font-semibold mb-3">Your cart is empty</h1>
-//             <p className="text-slate-500 mb-8 text-center">Looks like you haven't added anything to your cart yet.</p>
-//             <Link 
-//                 href="/shop" 
-//                 className="flex items-center gap-2 bg-slate-800 text-white px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors"
-//             >
-//                 Start Shopping
-//             </Link>
-//         </div>
-//     )
-// }
-
+            </div>
+        </div>
+    )
+}

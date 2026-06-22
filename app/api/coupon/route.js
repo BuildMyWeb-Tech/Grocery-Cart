@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\api\coupon\route.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\api\coupon\route.js
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";

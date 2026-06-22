@@ -1,9 +1,17 @@
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\OurSpec.jsx
 'use client'
 import React, { useState, useEffect } from 'react'
 import Title from './Title'
 import { ourSpecsData } from '@/assets/assets'
 import { motion } from 'framer-motion'
 import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react'
+
+const featureBullets = {
+    'Farm Fresh Products': ['Sourced directly from local farms', 'Quality checked before listing'],
+    'Fast Delivery': ['Same-day delivery in your area', 'Real-time order tracking'],
+    'Trusted Local Stores': ['Verified and approved sellers only', 'Ratings from real customers'],
+    'Secure Payments': ['Encrypted checkout, every time', 'Multiple payment options supported'],
+}
 
 const OurSpecs = () => {
     const [activeSpec, setActiveSpec] = useState(null)
@@ -39,26 +47,26 @@ const OurSpecs = () => {
             <div className='container px-4 sm:px-6 mx-auto max-w-6xl relative'>
                 {/* Decorative background elements */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-                    <div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-teal-100 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-                    <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-indigo-100 blur-3xl translate-x-1/3 translate-y-1/3"></div>
+                    <div className="absolute top-0 left-0 w-96 h-96 rounded-full bg-green-100 blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+                    <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-emerald-100 blur-3xl translate-x-1/3 translate-y-1/3"></div>
                 </div>
 
                 {/* Section Header with improved styling */}
                 <div className="text-center max-w-3xl mx-auto relative z-10 mb-16">
-                    <span className="inline-block px-3 py-1 bg-gradient-to-r from-teal-50 to-indigo-50 text-teal-700 text-sm font-semibold rounded-full mb-3 border border-teal-100">
+                    <span className="inline-block px-3 py-1 bg-green-50 text-green-700 text-sm font-semibold rounded-full mb-3 border border-green-100">
                         WHY CHOOSE US
                     </span>
                     <Title 
                         visibleButton={false} 
-                        title='Our Specifications' 
-                        description="We offer top-tier service and convenience to ensure your shopping experience is smooth, secure and completely hassle-free." 
+                        title='Why Shop With Us' 
+                        description="We offer fresh products and reliable service to ensure your grocery shopping experience is smooth, secure, and completely hassle-free." 
                         className="mb-4"
                     />
-                    <div className="w-20 h-1 bg-gradient-to-r from-teal-500 to-indigo-500 mx-auto mt-5 rounded-full"></div>
+                    <div className="w-20 h-1 bg-gradient-to-r from-green-500 to-green-600 mx-auto mt-5 rounded-full"></div>
                 </div>
 
                 {/* Feature cards with improved layout and animations */}
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10'>
                     {ourSpecsData.map((spec, index) => (
                         <motion.div 
                             key={index}
@@ -92,7 +100,7 @@ const OurSpecs = () => {
                                     </div>
                                     
                                     {/* Title */}
-                                    <h3 className='text-xl font-semibold text-slate-800 mb-3 group-hover:text-teal-700 transition-colors'>
+                                    <h3 className='text-xl font-semibold text-slate-800 mb-3 group-hover:text-green-700 transition-colors'>
                                         {spec.title}
                                     </h3>
                                     
@@ -103,14 +111,14 @@ const OurSpecs = () => {
                                     
                                     {/* Features list */}
                                     <ul className='space-y-2 mb-6'>
-                                        {['Feature 1', 'Feature 2'].map((feature, i) => (
+                                        {(featureBullets[spec.title] || []).map((feature, i) => (
                                             <li key={i} className='flex items-start'>
                                                 <CheckCircle2 
                                                     size={16} 
-                                                    className="mr-2 mt-0.5 text-teal-500 flex-shrink-0" 
+                                                    className="mr-2 mt-0.5 text-green-500 flex-shrink-0" 
                                                 />
                                                 <span className='text-sm text-slate-600'>
-                                                    {feature} for {spec.title.toLowerCase()}
+                                                    {feature}
                                                 </span>
                                             </li>
                                         ))}

@@ -38,7 +38,7 @@ export async function GET(request) {
           include: {
             variant: {
               select: {
-                id: true, color: true, size: true, price: true, sku: true,
+                id: true, variantName: true, price: true, sku: true,
                 product: { select: { id: true, name: true, images: true, slug: true } },
               },
             },
@@ -84,6 +84,7 @@ export async function POST(request) {
     const variants   = await prisma.productVariant.findMany({
       where:   { id: { in: variantIds } },
       include: {
+        inventory: true,
         product: {
           select: {
             id: true, name: true, storeId: true, status: true,
@@ -96,17 +97,18 @@ export async function POST(request) {
     const variantMap = {};
     variants.forEach((v) => { variantMap[v.id] = v; });
 
-    // Stock validation
+    // Stock validation — reads from Inventory, not the (now-removed) ProductVariant.stock
     const stockErrors = [];
     for (const item of items) {
       const variant = variantMap[item.variantId];
       if (!variant) { stockErrors.push(`Variant ${item.variantId} not found`); continue; }
       if (variant.product.status !== 'ACTIVE') { stockErrors.push(`"${variant.product.name}" is not available`); continue; }
       if (!variant.product.store.isActive || variant.product.store.status !== 'ACTIVE') { stockErrors.push(`Store for "${variant.product.name}" is not active`); continue; }
-      if (variant.stock < item.quantity) {
-        stockErrors.push(variant.stock === 0
-          ? `"${variant.product.name}" (${variant.color}/${variant.size}) is out of stock`
-          : `"${variant.product.name}" (${variant.color}/${variant.size}) only has ${variant.stock} in stock`
+      const available = variant.inventory?.quantity ?? 0;
+      if (available < item.quantity) {
+        stockErrors.push(available === 0
+          ? `"${variant.product.name}" (${variant.variantName}) is out of stock`
+          : `"${variant.product.name}" (${variant.variantName}) only has ${available} in stock`
         );
       }
     }
@@ -138,7 +140,7 @@ export async function POST(request) {
     const commissionMap = {};
     commissions.forEach((c) => { commissionMap[c.storeId] = c.percentage; });
 
-    // ✅ Collect variantIds being purchased so we can remove only those
+    // Collect variantIds being purchased so we can remove only those
     // from the user's cart (in case the cart had items from a different
     // session/device that weren't part of this order)
     const purchasedVariantIds = new Set(items.map((i) => i.variantId));
@@ -148,10 +150,10 @@ export async function POST(request) {
       const orders = [];
 
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
-        const subtotal     = storeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-        const discountAmt  = discountPct > 0 ? (subtotal * discountPct) / 100 : 0;
+        const subtotal      = storeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        const discountAmt   = discountPct > 0 ? (subtotal * discountPct) / 100 : 0;
         const commissionAmt = ((commissionMap[storeId] ?? 0) * subtotal) / 100;
-        const total         = subtotal - discountAmt;
+        const total          = subtotal - discountAmt;
 
         const order = await tx.order.create({
           data: {
@@ -176,13 +178,17 @@ export async function POST(request) {
           data: { orderId: order.id, status: 'PENDING', changedBy: 'SYSTEM', note: 'Order placed successfully' },
         });
 
+        // Decrement stock via Inventory — re-checked fresh inside the transaction
         for (const item of storeItems) {
-          const fresh = await tx.productVariant.findUnique({ where: { id: item.variantId }, select: { stock: true } });
-          if (!fresh || fresh.stock < item.quantity) {
-            throw new Error(`Insufficient stock for "${item.variant.product.name}" (${item.variant.color}/${item.variant.size})`);
+          const freshInv = await tx.inventory.findUnique({
+            where:  { variantId: item.variantId },
+            select: { quantity: true },
+          });
+          const currentQty = freshInv?.quantity ?? 0;
+          if (currentQty < item.quantity) {
+            throw new Error(`Insufficient stock for "${item.variant.product.name}" (${item.variant.variantName})`);
           }
-          const newStock = fresh.stock - item.quantity;
-          await tx.productVariant.update({ where: { id: item.variantId }, data: { stock: newStock } });
+          const newStock = currentQty - item.quantity;
           await tx.inventory.upsert({
             where:  { variantId: item.variantId },
             update: { quantity: newStock },
@@ -193,10 +199,7 @@ export async function POST(request) {
         orders.push(order);
       }
 
-      // ✅ Clear purchased items from the user's server-side cart.
-      // Read the current cart, drop any variant that was just ordered,
-      // and persist the remainder (handles partial-cart checkouts safely
-      // and avoids the items reappearing via fetchCartThunk after order).
+      // Clear purchased items from the user's server-side cart.
       const currentUser = await tx.user.findUnique({ where: { id: userId }, select: { cart: true } });
       const currentCart = Array.isArray(currentUser?.cart) ? currentUser.cart : [];
       const remainingCart = currentCart.filter(
@@ -209,7 +212,7 @@ export async function POST(request) {
       });
 
       return orders;
-    });
+    }, { timeout: 20000, maxWait: 10000 });
 
     // Stripe payment
     if (paymentMethod === 'STRIPE') {
@@ -222,14 +225,14 @@ export async function POST(request) {
         return {
           price_data: {
             currency: 'inr',
-            product_data: { name: `${variant.product.name} (${variant.color}/${variant.size})` },
+            product_data: { name: `${variant.product.name} (${variant.variantName})` },
             unit_amount: Math.round(item.price * 100),
           },
           quantity: item.quantity,
         };
       });
 
-      // ✅ Build a guaranteed-https base URL (fixes "Invalid URL: explicit scheme required")
+      // Build a guaranteed-https base URL (fixes "Invalid URL: explicit scheme required")
       let baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
       if (!baseUrl) {
         const host = request.headers.get('host');
@@ -255,7 +258,6 @@ export async function POST(request) {
       });
     }
 
-    // ✅ COD — return response (this was the missing return)
     return NextResponse.json({
       message: `${createdOrders.length} order(s) placed successfully`,
       orders:  createdOrders,

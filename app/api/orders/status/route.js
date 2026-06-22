@@ -30,10 +30,11 @@ const ADMIN_TRANSITIONS = {
 
 // Customer can cancel only before PACKED
 const CUSTOMER_CANCELLABLE = new Set(['PENDING', 'CONFIRMED']);
-// ✅ Customer can request return only when DELIVERED
+// Customer can request return only when DELIVERED
 const CUSTOMER_RETURNABLE  = new Set(['DELIVERED']);
 const PRE_SHIPPED          = new Set(['PENDING', 'CONFIRMED', 'PACKED']);
 
+// Restore stock via Inventory — ProductVariant no longer has its own stock column
 async function restoreInventory(tx, orderId) {
   const order = await tx.order.findUnique({
     where:  { id: orderId },
@@ -42,10 +43,12 @@ async function restoreInventory(tx, orderId) {
   if (!order) return;
 
   for (const item of order.orderItems) {
-    const variant = await tx.productVariant.findUnique({ where: { id: item.variantId }, select: { stock: true } });
-    if (!variant) continue;
-    const newStock = variant.stock + item.quantity;
-    await tx.productVariant.update({ where: { id: item.variantId }, data: { stock: newStock } });
+    const inv = await tx.inventory.findUnique({
+      where:  { variantId: item.variantId },
+      select: { quantity: true },
+    });
+    const currentQty = inv?.quantity ?? 0;
+    const newStock = currentQty + item.quantity;
     await tx.inventory.upsert({
       where:  { variantId: item.variantId },
       update: { quantity: newStock },
@@ -88,7 +91,7 @@ export async function PUT(request) {
     });
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-    // ✅ Customer: can cancel before PACKED, or request return when DELIVERED
+    // Customer: can cancel before PACKED, or request return when DELIVERED
     if (isCustomer) {
       if (order.userId !== userId)
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

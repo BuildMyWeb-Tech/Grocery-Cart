@@ -124,7 +124,7 @@ export default function ProductPage() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-500 gap-3">
         <p className="text-lg font-medium">Product not found</p>
-        <Link href="/" className="text-sm text-indigo-600 hover:underline">← Back to Home</Link>
+        <Link href="/" className="text-sm text-green-600 hover:underline">← Back to Home</Link>
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function ProductPage() {
           <ChevronRight size={14} className="text-slate-300" />
           <Link href="/shop" className="hover:text-slate-700">Products</Link>
           <ChevronRight size={14} className="text-slate-300" />
-          <span className="text-indigo-600 font-medium">{categoryDisplay}</span>
+          <span className="text-green-600 font-medium">{categoryDisplay}</span>
           <ChevronRight size={14} className="text-slate-300" />
           <span className="text-slate-700 font-medium line-clamp-1 max-w-[200px]">{product.name}</span>
         </div>

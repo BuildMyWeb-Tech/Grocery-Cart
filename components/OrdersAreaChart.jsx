@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\OrdersAreaChart.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\OrdersAreaChart.jsx
 'use client';
 import { useState } from 'react';
 import {

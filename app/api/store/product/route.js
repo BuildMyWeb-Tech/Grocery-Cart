@@ -43,13 +43,16 @@ export async function POST(request) {
 
     const formData = await request.formData();
 
-    const name           = formData.get('name')?.trim();
-    const description    = formData.get('description')?.trim();
-    const brand          = formData.get('brand')?.trim() || null;
-    const keyFeaturesRaw = formData.get('keyFeatures');
-    const categoryIdsRaw = formData.get('categoryIds'); // JSON array of category IDs
-    const variantsRaw    = formData.get('variants');    // JSON array of variant objects
-    const images         = formData.getAll('images');
+    const name            = formData.get('name')?.trim();
+    const description     = formData.get('description')?.trim();
+    const statusRaw        = formData.get('status');
+    const status           = ['ACTIVE', 'INACTIVE', 'DRAFT', 'OUT_OF_STOCK'].includes(statusRaw) ? statusRaw : 'ACTIVE';
+    const isOrganic         = formData.get('isOrganic') === 'true';
+    const isFeatured         = formData.get('isFeatured') === 'true';
+    const keyFeaturesRaw  = formData.get('keyFeatures');
+    const categoryIdsRaw  = formData.get('categoryIds'); // JSON array of category IDs
+    const variantsRaw     = formData.get('variants');    // JSON array of variant objects
+    const images          = formData.getAll('images');
 
     // ── Validation ────────────────────────────────────────────────
     if (!name || !description) {
@@ -86,9 +89,9 @@ export async function POST(request) {
 
     // Validate each variant
     for (const v of variantList) {
-      if (!v.color || !v.size || !v.sku) {
+      if (!v.variantName || !v.sku) {
         return NextResponse.json(
-          { error: 'Each variant must have color, size and SKU' },
+          { error: 'Each variant must have a variant name and SKU' },
           { status: 400 }
         );
       }
@@ -164,10 +167,11 @@ export async function POST(request) {
           name,
           slug,
           description,
-          brand,
           keyFeatures,
           images: imageUrls,
-          status: 'ACTIVE',
+          isOrganic,
+          isFeatured,
+          status,
           createdBy: source === 'employee' ? employee.employeeId : 'owner',
         },
       });
@@ -185,34 +189,32 @@ export async function POST(request) {
         const variant = await tx.productVariant.create({
           data: {
             productId: created.id,
-            color: v.color.trim(),
-            size: v.size.trim(),
+            variantName: v.variantName.trim(),
             price: Number(v.price),
             costPrice: Number(v.costPrice || 0),
             sku: v.sku.trim(),
-            stock: Math.max(0, Number(v.stock || 0)),
           },
         });
 
-        // Create inventory record per variant
+        // Create the linked inventory record — Current Stock / Minimum Stock live here
         await tx.inventory.create({
           data: {
             variantId: variant.id,
             storeId,
             quantity: Math.max(0, Number(v.stock || 0)),
-            lowStock: 10,
+            lowStock: Math.max(0, Number(v.minStock ?? 10)),
           },
         });
       }
 
-      return tx.product.findUnique({
+    return tx.product.findUnique({
         where: { id: created.id },
         include: {
-          variants: true,
+          variants: { include: { inventory: true } },
           categories: { include: { category: true } },
         },
       });
-    });
+    }, { timeout: 20000, maxWait: 10000 });
 
     return NextResponse.json(
       { message: 'Product created successfully', product },
@@ -233,17 +235,26 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const search   = searchParams.get('search');
     const status   = searchParams.get('status');
+    const category = searchParams.get('category');
+    const organic  = searchParams.get('organic');
+    const featured = searchParams.get('featured');
     const page     = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit    = Math.min(100, parseInt(searchParams.get('limit') || '20'));
     const skip     = (page - 1) * limit;
 
     const where = { storeId };
     if (status) where.status = status;
+    if (organic !== null) where.isOrganic = organic === 'true';
+    if (featured !== null) where.isFeatured = featured === 'true';
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } },
-      ];
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+    if (category) {
+      where.categories = {
+        some: {
+          category: { name: { contains: category, mode: 'insensitive' } },
+        },
+      };
     }
 
     const [products, total] = await Promise.all([
@@ -292,21 +303,19 @@ export async function PUT(request) {
 
     const formData = await request.formData();
 
-    const name           = formData.get('name')?.trim();
-    const description    = formData.get('description')?.trim();
-    const brand          = formData.get('brand')?.trim() || null;
-    const status         = formData.get('status') || existing.status;
-    const keyFeaturesRaw = formData.get('keyFeatures');
-    const categoryIdsRaw = formData.get('categoryIds');
-    const existingImagesRaw = formData.get('existingImages');
-    const newImages      = formData.getAll('images');
+    const name              = formData.get('name')?.trim();
+    const description       = formData.get('description')?.trim();
+    const statusRaw          = formData.get('status');
+    const status              = ['ACTIVE', 'INACTIVE', 'DRAFT', 'OUT_OF_STOCK'].includes(statusRaw) ? statusRaw : existing.status;
+    const isOrganic            = formData.has('isOrganic') ? formData.get('isOrganic') === 'true' : existing.isOrganic;
+    const isFeatured            = formData.has('isFeatured') ? formData.get('isFeatured') === 'true' : existing.isFeatured;
+    const keyFeaturesRaw     = formData.get('keyFeatures');
+    const categoryIdsRaw     = formData.get('categoryIds');
+    const existingImagesRaw  = formData.get('existingImages');
+    const newImages           = formData.getAll('images');
 
     if (!name || !description) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
-    }
-
-    if (!['ACTIVE', 'INACTIVE', 'DRAFT'].includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
     // Merge existing + new images
@@ -348,9 +357,10 @@ export async function PUT(request) {
     const updateData = {
       name,
       description,
-      brand,
       keyFeatures,
       images: allImages,
+      isOrganic,
+      isFeatured,
       status,
     };
 
@@ -393,7 +403,7 @@ export async function PUT(request) {
       }
 
       return prod;
-    });
+    }, { timeout: 20000, maxWait: 10000 });
 
     return NextResponse.json({ message: 'Product updated successfully', product: updated });
   } catch (error) {

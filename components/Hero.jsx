@@ -1,7 +1,9 @@
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\Hero.jsx
 'use client'
 import { assets } from '@/assets/assets'
 import { ArrowRight, ChevronRight, Zap, Star, Tag, Award } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 import CategoriesMarquee from './CategoriesMarquee'
 
@@ -31,42 +33,42 @@ const Hero = () => {
                                 {/* Floating Badge */}
                                 <div className={`inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm max-w-max mb-6 shadow-lg ${scrolled ? 'animate-pulse' : ''} transition-all duration-300`}>
                                     <Zap className='w-3 h-3 sm:w-4 sm:h-4' />
-                                    <span className="font-medium tracking-wide">EXCLUSIVE DEAL</span> 
+                                    <span className="font-medium tracking-wide">FRESH PICKS DAILY</span> 
                                 </div>
                                 
                                 {/* Main Heading with animated gradient */}
                                 <h2 className='text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-4 lg:mb-6 max-w-xl'>
                                     <span className='bg-gradient-to-r from-emerald-700 via-teal-600 to-cyan-700 bg-clip-text text-transparent animate-gradient'>
-                                        Tech That Elevates Your Everyday
+                                        Fresh Groceries Delivered Daily
                                     </span>
                                 </h2>
                                 
                                 {/* Subheading */}
                                 <p className='text-slate-700 text-lg mb-6 lg:mb-8 max-w-xl'>
-                                    Discover premium gadgets at prices that make sense. Quality meets affordability.
+                                    Shop farm-fresh vegetables, fruits, and daily grocery essentials from trusted local stores. Discover fresh produce, organic products, and household essentials all in one place.
                                 </p>
                                 
                                 
                                 
                                 {/* CTA Buttons */}
                                 <div className='flex flex-wrap gap-4 mt-auto'>
-                                    <button className='relative overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-6 py-3 rounded-lg font-medium tracking-wide group'>
+                                    <Link href="/shop" className='relative overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-6 py-3 rounded-lg font-medium tracking-wide group inline-flex items-center'>
                                         <span className='relative z-10 flex items-center'>
-                                            SHOP NOW
+                                            Start Shopping
                                             <ArrowRight className='ml-2 group-hover:translate-x-1 transition-transform' size={18} />
                                         </span>
                                         <span className='absolute inset-0 bg-gradient-to-r from-teal-500 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></span>
-                                    </button>
+                                    </Link>
                                     
-                                    {/* <button className='bg-white/20 backdrop-blur-sm border border-teal-100 hover:bg-white/40 text-slate-700 px-6 py-3 rounded-lg font-medium tracking-wide transition-all duration-300'>
-                                        LEARN MORE
-                                    </button> */}
+                                    <Link href="/shop" className='bg-white/40 backdrop-blur-sm border border-emerald-200 hover:bg-white/70 text-slate-700 px-6 py-3 rounded-lg font-medium tracking-wide transition-all duration-300 inline-flex items-center'>
+                                        Browse Stores
+                                    </Link>
                                 </div>
                                 
                                 {/* Free Shipping Badge */}
                                 <div className='absolute top-8 right-8 bg-white/70 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 border border-emerald-100 shadow-sm'>
                                     <Tag className='w-3 h-3 text-emerald-600' />
-                                    <span className='text-slate-700'>Free Shipping on Orders Above ₹ 50</span>
+                                    <span className='text-slate-700'>Free Delivery on Orders Above {currency}50</span>
                                 </div>
                             </div>
                             
@@ -82,7 +84,7 @@ const Hero = () => {
                             <Image 
                                 className='absolute bottom-0 right-0 w-full max-w-md xl:max-w-lg object-contain drop-shadow-2xl animate-image-float' 
                                 src={assets.hero_model_img} 
-                                alt="Featured product" 
+                                alt="Fresh grocery basket" 
                                 priority
                             />
                         </div>
@@ -99,18 +101,18 @@ const Hero = () => {
                                         </div>
                                         
                                         <h3 className='text-2xl sm:text-3xl font-bold bg-gradient-to-r from-amber-700 to-orange-600 bg-clip-text text-transparent mb-2'>
-                                            Premium Gadgets
+                                            Farm Fresh Favorites
                                         </h3>
                                         
                                         <p className='text-slate-600 mb-6'>
-                                            Hand-picked top tech for every budget
+                                            Hand-picked fresh produce, loved by thousands of happy customers
                                         </p>
                                     </div>
                                     
-                                    <button className='flex items-center text-amber-700 font-medium text-sm group-hover:text-amber-900 transition-all duration-300 mt-auto'>
+                                    <Link href="/shop" className='flex items-center text-amber-700 font-medium text-sm group-hover:text-amber-900 transition-all duration-300 mt-auto'>
                                         Explore Collection
                                         <ArrowRight className='ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform' />
-                                    </button>
+                                    </Link>
                                 </div>
                                 
                                 {/* Background Elements */}
@@ -122,7 +124,7 @@ const Hero = () => {
                                 <Image 
                                     className='absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-32 sm:w-40 object-contain drop-shadow-lg transform group-hover:scale-110 transition-transform duration-500' 
                                     src={assets.hero_product_img1} 
-                                    alt="Best product" 
+                                    alt="Best selling grocery item" 
                                 />
                             </div>
 
@@ -136,18 +138,18 @@ const Hero = () => {
                                         </div>
                                         
                                         <h3 className='text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent mb-2'>
-                                            Limited Offers
+                                            Weekly Fresh Offers
                                         </h3>
                                         
                                         <p className='text-slate-600 mb-6'>
-                                            Exclusive deals ending soon
+                                            Save big on fruits, veggies, and daily essentials
                                         </p>
                                     </div>
                                     
-                                    <button className='flex items-center text-indigo-700 font-medium text-sm group-hover:text-indigo-900 transition-all duration-300 mt-auto'>
+                                    <Link href="/shop" className='flex items-center text-indigo-700 font-medium text-sm group-hover:text-indigo-900 transition-all duration-300 mt-auto'>
                                         View Offers
                                         <ArrowRight className='ml-1 w-4 h-4 group-hover:translate-x-1 transition-transform' />
-                                    </button>
+                                    </Link>
                                 </div>
                                 
                                 {/* Background Elements */}
@@ -159,7 +161,7 @@ const Hero = () => {
                                 <Image 
                                     className='absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-32 sm:w-40 object-contain drop-shadow-lg transform group-hover:scale-110 transition-transform duration-500' 
                                     src={assets.hero_product_img2} 
-                                    alt="Discounted product" 
+                                    alt="Discounted grocery item" 
                                 />
                             </div>
                         </div>

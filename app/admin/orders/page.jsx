@@ -139,15 +139,15 @@ export default function AdminOrders() {
     <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 className="text-2xl md:text-3xl text-slate-800 font-bold flex items-center gap-2">
-          <ShieldCheck className="h-7 w-7 text-violet-600" /> All Orders
-          <span className="text-sm font-normal text-slate-500 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">Admin</span>
+          <ShieldCheck className="h-7 w-7 text-green-600" /> All Orders
+          <span className="text-sm font-normal text-slate-500 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Admin</span>
         </h1>
         <div className="flex items-center gap-3">
-          <button onClick={fetchOrders} className="flex items-center gap-1.5 text-xs text-violet-600 bg-violet-50 border border-violet-200 px-3 py-2 rounded-lg">
+          <button onClick={fetchOrders} className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg">
             <RefreshCw size={13} /> Refresh
           </button>
           <div className="relative">
-            <button onClick={() => setExportMenuOpen(!exportMenuOpen)} className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <button onClick={() => setExportMenuOpen(!exportMenuOpen)} className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
               <Download size={16} /> Export
             </button>
             {exportMenuOpen && (
@@ -191,7 +191,7 @@ export default function AdminOrders() {
           <div className="overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left text-gray-600">
-                <thead className="bg-violet-50 text-gray-700 text-xs uppercase border-b border-gray-200">
+                <thead className="bg-green-50 text-gray-700 text-xs uppercase border-b border-gray-200">
                   <tr>
                     {['Order', 'Store', 'Customer', 'Date', 'Total', 'Commission', 'Status', 'Actions'].map((h) => (
                       <th key={h} className="px-4 py-3">{h}</th>
@@ -200,16 +200,16 @@ export default function AdminOrders() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-violet-50/20">
+                    <tr key={order.id} className="hover:bg-green-50/20">
                       <td className="px-4 py-3"><span className="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">#{order.id.slice(0, 8)}</span></td>
-                      <td className="px-4 py-3"><span className="text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">{order.store?.name || 'N/A'}</span></td>
+                      <td className="px-4 py-3"><span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">{order.store?.name || 'N/A'}</span></td>
                       <td className="px-4 py-3 font-medium text-slate-700">{order.user?.name || 'Unknown'}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-3 font-medium text-slate-800">₹{order.total.toLocaleString('en-IN')}</td>
                       <td className="px-4 py-3 text-blue-600 text-xs">₹{(order.commissionAmt || 0).toLocaleString('en-IN')}</td>
                       <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
                       <td className="px-4 py-3">
-                        <button onClick={() => { setSelectedOrder(order); setActiveTab('details'); }} className="p-2 bg-violet-50 rounded-lg text-violet-600 hover:bg-violet-100 border border-violet-200">
+                        <button onClick={() => { setSelectedOrder(order); setActiveTab('details'); }} className="p-2 bg-green-50 rounded-lg text-green-600 hover:bg-green-100 border border-green-200">
                           <Eye size={16} />
                         </button>
                       </td>
@@ -223,7 +223,7 @@ export default function AdminOrders() {
           <div className="flex items-center justify-end gap-2 mt-4">
             <button onClick={() => setPage(1)} disabled={page === 1} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronsLeft size={18} /></button>
             <button onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronLeft size={18} /></button>
-            <span className="px-3 py-1 bg-violet-600 text-white rounded-lg text-sm">{page} / {totalPages || 1}</span>
+            <span className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm">{page} / {totalPages || 1}</span>
             <button onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page >= totalPages} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronRight size={18} /></button>
             <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className="p-1 border rounded-lg bg-white disabled:opacity-50"><ChevronsRight size={18} /></button>
           </div>
@@ -233,7 +233,7 @@ export default function AdminOrders() {
       {selectedOrder && (
         <div onClick={() => setSelectedOrder(null)} className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-y-auto max-h-[90vh]">
-            <div className="bg-violet-600 text-white px-6 pt-6 pb-4 rounded-t-xl">
+            <div className="bg-green-600 text-white px-6 pt-6 pb-4 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">Order #{selectedOrder.id.slice(0, 8)}</h2>
                 <button onClick={() => setSelectedOrder(null)} className="bg-white/20 p-1.5 rounded-full hover:bg-white/30"><X className="h-5 w-5" /></button>
@@ -248,7 +248,7 @@ export default function AdminOrders() {
                 { key: 'actions',  label: 'Override', icon: <ShieldCheck size={14} /> },
               ].map((tab) => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-violet-600 text-violet-600' : 'border-transparent text-slate-500'}`}>
+                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition -mb-px ${activeTab === tab.key ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500'}`}>
                   {tab.icon} {tab.label}
                 </button>
               ))}
@@ -283,7 +283,7 @@ export default function AdminOrders() {
                         {item.variant?.product?.images?.[0] && <img src={item.variant.product.images[0]} alt="" className="w-10 h-10 rounded object-cover border border-slate-200" />}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-800 truncate">{item.variant?.product?.name}</p>
-                          <p className="text-xs text-slate-500">{item.variant?.color} / {item.variant?.size}</p>
+                          <p className="text-xs text-slate-500">{item.variant?.variantName}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-semibold text-slate-800">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
@@ -306,7 +306,7 @@ export default function AdminOrders() {
                   <div className="mb-4">
                     <label className="text-sm font-medium text-slate-700 block mb-1">Note (optional):</label>
                     <input type="text" value={noteInput} onChange={(e) => setNoteInput(e.target.value)} placeholder="Reason for override..."
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200" />
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-200" />
                   </div>
                   <p className="text-sm font-medium text-slate-700 mb-3">Current: <StatusBadge status={selectedOrder.status} /></p>
                   {allowedNext.length > 0 ? (

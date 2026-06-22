@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\middlewares\authSeller.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\middlewares\authSeller.js
 import prisma from '@/lib/prisma';
 
 /**

@@ -15,13 +15,14 @@ async function resolveRole(request) {
   return { role: 'PUBLIC', storeId: null };
 }
 
-// Exact fields that exist on Product model (no mrp — not in schema)
+// Exact fields that exist on Product model (no mrp, no brand — neither is in schema)
 const PRODUCT_SELECT = {
   id:          true,
   name:        true,
   slug:        true,
   description: true,
-  brand:       true,
+  isOrganic:   true,
+  isFeatured:  true,
   keyFeatures: true,
   images:      true,
   status:      true,
@@ -34,8 +35,10 @@ const PRODUCT_SELECT = {
   },
   variants: {
     select: {
-      id: true, color: true, size: true,
-      price: true, costPrice: true, stock: true, sku: true,
+      id: true, variantName: true,
+      price: true, costPrice: true, sku: true,
+      // Stock now lives on Inventory, not ProductVariant
+      inventory: { select: { quantity: true, lowStock: true } },
     },
   },
   categories: {
@@ -61,7 +64,7 @@ const PRODUCT_SELECT_FULL = {
 
 function enrichProduct(p) {
   const prices     = (p.variants || []).map((v) => Number(v.price)).filter((x) => x > 0);
-  const totalStock = (p.variants || []).reduce((sum, v) => sum + (v.stock || 0), 0);
+  const totalStock = (p.variants || []).reduce((sum, v) => sum + (v.inventory?.quantity || 0), 0);
   const avgRating  = (p.ratings || []).length > 0
     ? (p.ratings || []).reduce((sum, r) => sum + r.rating, 0) / p.ratings.length
     : null;
@@ -118,7 +121,6 @@ export async function GET(request) {
     if (search) {
       where.OR = [
         { name:        { contains: search, mode: 'insensitive' } },
-        { brand:       { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }

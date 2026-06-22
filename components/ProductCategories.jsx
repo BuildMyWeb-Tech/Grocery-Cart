@@ -142,7 +142,7 @@ const ProductCategories = () => {
           <Title
             visibleButton={false}
             title="Shop By Category"
-            description="Explore our wide range of products organized into intuitive categories for easier shopping."
+            description="Explore fresh produce, pantry staples, and everyday essentials — organized for easier shopping."
             className="mb-4"
           />
           <div className="w-20 h-1 bg-gradient-to-r from-green-500 to-green-500 mx-auto mt-5 rounded-full" />

@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\next.config.mjs
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images:{

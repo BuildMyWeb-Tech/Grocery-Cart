@@ -1,3 +1,4 @@
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\(public)\contact\page.jsx
 "use client";
 
 import { useState } from "react";
@@ -46,7 +47,7 @@ export default function ContactPage() {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-slate-700">Email</p>
-                                <p className="text-sm text-slate-500 mt-0.5">support@kingcart.com</p>
+                                <p className="text-sm text-slate-500 mt-0.5">support@grocerycart.com</p>
                             </div>
                         </div>
 

@@ -43,7 +43,7 @@ const CategoriesMarquee = () => {
     <div className="max-w-7xl mx-auto sm:my-20 px-4">
       {/* ✅ Section header with View All Categories button — TC-S02-004 */}
       <div className="flex items-center justify-between mb-4 px-1">
-        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Shop By Category</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-slate-800">Popular Categories</h2>
         <Link href="/shop" className="flex items-center gap-1.5 text-sm font-medium text-green-600 hover:text-green-700 transition-colors">
           View All Categories <ArrowRight size={14} />
         </Link>

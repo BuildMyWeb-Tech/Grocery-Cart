@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\ProductCard.jsx
+// components/ProductCard.jsx
 'use client';
 import { StarIcon, ShoppingCart, Heart, Eye } from 'lucide-react';
 import Image from 'next/image';
@@ -24,11 +24,12 @@ const ProductCard = ({ product, badgeText, badgeIcon }) => {
   const variantPrices = variants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
   const minPrice      = variantPrices.length ? Math.min(...variantPrices) : 0;
   const maxPrice      = variantPrices.length ? Math.max(...variantPrices) : 0;
-  const totalStock    = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+  // Stock now lives on Inventory, not ProductVariant
+  const totalStock    = variants.reduce((sum, v) => sum + (Number(v.inventory?.quantity) || 0), 0);
   const isInStock     = product.status === 'ACTIVE' && totalStock > 0;
 
-  // ✅ Default variant for quick "Add to Cart" — first in-stock variant, or first variant
-  const defaultVariant = variants.find((v) => (v.stock ?? 0) > 0) || variants[0] || null;
+  // Default variant for quick "Add to Cart" — first in-stock variant, or first variant
+  const defaultVariant = variants.find((v) => (v.inventory?.quantity ?? 0) > 0) || variants[0] || null;
 
   const categoryNames = (product.categories || [])
     .map((c) => c?.category?.name || c?.name)
@@ -63,7 +64,7 @@ const ProductCard = ({ product, badgeText, badgeIcon }) => {
     }
   };
 
-  // ✅ Add to Cart — uses default variant
+  // Add to Cart — uses default variant
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -73,7 +74,7 @@ const ProductCard = ({ product, badgeText, badgeIcon }) => {
       return;
     }
 
-    if ((defaultVariant.stock ?? 0) <= 0) {
+    if ((defaultVariant.inventory?.quantity ?? 0) <= 0) {
       toast.error('Selected option is out of stock');
       return;
     }
@@ -83,8 +84,7 @@ const ProductCard = ({ product, badgeText, badgeIcon }) => {
       productId:    product.id,
       storeId:      product.storeId || product.store?.id,
       price:        Number(defaultVariant.price) || 0,
-      color:        defaultVariant.color,
-      size:         defaultVariant.size,
+      variantName:  defaultVariant.variantName,
       productName:  product.name,
       productImage: product.images?.[0] || null,
       storeName:    product.store?.name || '',
@@ -149,10 +149,6 @@ const ProductCard = ({ product, badgeText, badgeIcon }) => {
 
         {/* Info */}
         <div className="p-2.5 sm:p-4 flex flex-col flex-1">
-          {product.brand && (
-            <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5 sm:mb-1">{product.brand}</p>
-          )}
-
           <h3 className="text-xs sm:text-sm font-semibold text-slate-800 line-clamp-2 leading-snug mb-1.5 sm:mb-2 group-hover:text-green-700 transition-colors min-h-[2rem] sm:min-h-[2.5rem]">
             {product.name}
           </h3>

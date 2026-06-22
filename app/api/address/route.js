@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\api\address\route.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\api\address\route.js
 import prisma from '@/lib/prisma';
 import { clerkClient, getAuth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';

@@ -1,22 +1,23 @@
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\components\About.jsx
 'use client'
 import React from 'react'
 import Title from './Title'
-import ProductCard from './ProductCard'
-import { useSelector } from 'react-redux'
 
 const About = () => {
-
-    const displayQuantity = 4
-    const products = useSelector(state => state.product.list)
-
     return (
         <div className='px-6 my-30 max-w-6xl mx-auto'>
-            <Title title='Create About' description={`Showing ${products.length < displayQuantity ? products.length : displayQuantity} of ${products.length} products`} href='/shop' />
-            {/* <div className='mt-12 grid grid-cols-2 sm:flex flex-wrap gap-6 justify-between'>
-                {products.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, displayQuantity).map((product, index) => (
-                    <ProductCard key={index} product={product} />
-                ))}
-            </div> */}
+            <div className="text-center max-w-3xl mx-auto mb-4">
+                <span className="inline-block px-3 py-1 bg-green-50 text-green-700 text-sm font-semibold rounded-full mb-3 border border-green-100">
+                    WHO WE ARE
+                </span>
+                <Title
+                    visibleButton={false}
+                    title='Welcome To Grocery Cart'
+                    description="Grocery Cart is a multi-vendor grocery marketplace connecting customers with trusted local grocery stores. Buy fresh vegetables, fruits, grocery essentials, and organic products from multiple stores in one convenient platform. Enjoy a smooth shopping experience with secure payments and trusted sellers."
+                    className="mb-4"
+                />
+                <div className="w-20 h-1 bg-gradient-to-r from-green-500 to-green-600 mx-auto mt-5 rounded-full" />
+            </div>
         </div>
     )
 }

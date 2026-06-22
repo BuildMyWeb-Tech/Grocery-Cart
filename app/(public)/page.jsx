@@ -1,8 +1,8 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\(public)\page.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\(public)\page.jsx
 'use client'
 import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
-// import Newsletter from "@/components/Newsletter";
+import Newsletter from "@/components/Newsletter";
 import OurSpecs from "@/components/OurSpec";
 import LatestProducts from "@/components/LatestProducts";
 import About from "@/components/About";
@@ -14,11 +14,11 @@ export default function Home() {
         <div>
             <Hero />
             <ProductCategories />
-            <LatestProducts />
-            {/* <About/> */}
             <BestSelling />
+            <LatestProducts />
+            <About />
             <OurSpecs />
-            {/* <Newsletter /> */}
+            <Newsletter />
         </div>
     );
 }

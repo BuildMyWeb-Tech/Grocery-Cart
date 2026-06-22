@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\(public)\create-store\page.jsx
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\(public)\create-store\page.jsx
 'use client';
 import { assets } from "@/assets/assets";
 import { useEffect, useState } from "react";
@@ -119,7 +119,7 @@ export default function CreateStore() {
           <Store size={36} className="text-slate-400" />
         </div>
         <h1 className="text-2xl font-semibold text-slate-700 mb-2">Sign in to create a store</h1>
-        <p className="text-slate-500 mb-8 max-w-sm">You need to be logged in to apply as a seller on KingCart.</p>
+        <p className="text-slate-500 mb-8 max-w-sm">You need to be logged in to apply as a seller on GroceryCart.</p>
         <Link href="/sign-in" className="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-6 py-3 rounded-lg font-medium transition-colors">
           Sign In <ArrowRight size={16} />
         </Link>
@@ -194,7 +194,7 @@ export default function CreateStore() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-800">
-            Start Selling on <span className="text-green-600">KingCart</span>
+            Start Selling on <span className="text-green-600">GroceryCart</span>
           </h1>
           <p className="text-slate-500 mt-2 text-sm max-w-lg">
             Fill in your store details below. Your application will be reviewed by our admin team within 1-2 business days.

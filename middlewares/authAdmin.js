@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\middlewares\authAdmin.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\middlewares\authAdmin.js
 import { clerkClient } from '@clerk/nextjs/server';
 
 const authAdmin = async (userId) => {

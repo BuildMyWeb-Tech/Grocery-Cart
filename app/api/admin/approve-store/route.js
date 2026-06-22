@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\app\api\admin\approve-store\route.js
+// C:\Users\Siddharathan\Desktop\Grocery-Cart\app\api\admin\approve-store\route.js
 import prisma from '@/lib/prisma';
 import authAdmin from '@/middlewares/authAdmin';
 import { getAdminUserId } from '@/lib/getAdminUserId';

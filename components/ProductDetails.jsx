@@ -1,4 +1,4 @@
-// C:\Users\Siddharathan\Desktop\gocart-ecommerce-full-stack\components\ProductDetails.jsx
+// components/ProductDetails.jsx
 'use client';
 import {
   StarIcon, ShieldCheckIcon, TruckIcon, ShoppingCartIcon,
@@ -19,27 +19,23 @@ export default function ProductDetails({ product }) {
   const cartItems     = useSelector((state) => state.cart.items || []);
   const wishlistItems = useSelector((state) => state.wishlist.items || []);
 
-  const [mainImage,     setMainImage]     = useState(product.images?.[0]);
-  const [imageLoading,  setImageLoading]  = useState(true);
-  const [quantity,      setQuantity]      = useState(1);
-  const [isZoomed,      setIsZoomed]      = useState(false);
-  const [mousePos,      setMousePos]      = useState({ x: 0, y: 0 });
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedSize,  setSelectedSize]  = useState(null);
+  const [mainImage,        setMainImage]        = useState(product.images?.[0]);
+  const [imageLoading,     setImageLoading]     = useState(true);
+  const [quantity,         setQuantity]         = useState(1);
+  const [isZoomed,         setIsZoomed]         = useState(false);
+  const [mousePos,         setMousePos]         = useState({ x: 0, y: 0 });
+  const [selectedVariantId, setSelectedVariantId] = useState(null);
   const imageContainerRef = useRef(null);
 
-  const colors       = [...new Set((product.variants || []).map((v) => v.color).filter(Boolean))];
-  const sizesForColor = selectedColor
-    ? (product.variants || []).filter((v) => v.color === selectedColor).map((v) => v.size)
-    : [...new Set((product.variants || []).map((v) => v.size).filter(Boolean))];
+  // Each ProductVariant is now a directly-selectable option (e.g. 250g/500g/1kg),
+  // not one half of a color×size cross-product like the old model
+  const variants = product.variants || [];
 
-  const selectedVariant = selectedColor && selectedSize
-    ? (product.variants || []).find((v) => v.color === selectedColor && v.size === selectedSize)
-    : null;
+  const selectedVariant = (variants.find((v) => v.id === selectedVariantId)) || null;
 
-  const variantStock  = selectedVariant?.stock ?? 0;
+  const variantStock  = selectedVariant?.inventory?.quantity ?? 0;
   const variantPrice  = selectedVariant ? Number(selectedVariant.price) : null;
-  const allPrices     = (product.variants || []).map((v) => Number(v.price) || 0).filter((p) => p > 0);
+  const allPrices     = variants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
   const displayPrice  = variantPrice ?? (allPrices.length ? Math.min(...allPrices) : 0);
 
   const categoryDisplay =
@@ -48,26 +44,23 @@ export default function ProductDetails({ product }) {
 
   const ratings    = product.ratings || [];
   const avgRating  = ratings.length ? ratings.reduce((s, r) => s + r.rating, 0) / ratings.length : 0;
-  const totalStock = (product.variants || []).reduce((s, v) => s + (v.stock || 0), 0);
+  const totalStock = variants.reduce((s, v) => s + (v.inventory?.quantity || 0), 0);
 
   const isInWishlist = wishlistItems.some((i) => (i.id || i.productId) === product.id);
   const isInCart     = selectedVariant ? cartItems.some((i) => i.variantId === selectedVariant.id) : false;
 
+  // Auto-select when there's only one option, same UX as before
   useEffect(() => {
-    if (colors.length === 1) setSelectedColor(colors[0]);
-    else setSelectedColor(null);
-    setSelectedSize(null);
+    if (variants.length === 1) setSelectedVariantId(variants[0].id);
+    else setSelectedVariantId(null);
   }, [product.id]);
 
-  useEffect(() => {
-    if (sizesForColor.length === 1) setSelectedSize(sizesForColor[0]);
-    else setSelectedSize(null);
-  }, [selectedColor]);
+  // Reset quantity whenever the selected variant changes, so a quantity chosen
+  // for one variant's stock level can't silently carry over to a different one
+  useEffect(() => { setQuantity(1); }, [selectedVariantId]);
 
   const addToCartHandler = () => {
-    if (!selectedColor)   { toast.error('Please select a color'); return; }
-    if (!selectedSize)    { toast.error('Please select a size'); return; }
-    if (!selectedVariant) { toast.error('Select a valid variant'); return; }
+    if (!selectedVariant)   { toast.error('Please select an option'); return; }
     if (variantStock === 0) { toast.error('Out of stock'); return; }
     if (quantity > variantStock) { toast.error(`Only ${variantStock} available`); return; }
 
@@ -81,10 +74,8 @@ export default function ProductDetails({ product }) {
       productImage: product.images?.[0] || '/placeholder.png',
       quantity,
       category:     categoryDisplay,
-      color:        selectedColor,
-      size:         selectedSize,
+      variantName:  selectedVariant.variantName,
       sku:          selectedVariant.sku,
-      stock:        variantStock,
       storeId:      product.storeId || product.store?.id,
       storeName:    product.store?.name || '',
     }));
@@ -113,7 +104,6 @@ export default function ProductDetails({ product }) {
 
         {/* ── Left: Images ──────────────────────────────────────── */}
         <div className="lg:w-[48%] bg-gradient-to-br from-slate-50 to-slate-100 p-6 lg:p-8">
-          {/* Main image */}
           <div
             ref={imageContainerRef}
             className="relative w-full aspect-square rounded-2xl overflow-hidden bg-white shadow-sm cursor-zoom-in mb-4"
@@ -136,7 +126,6 @@ export default function ProductDetails({ product }) {
             )}
           </div>
 
-          {/* Thumbnails */}
           {product.images?.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-1">
               {product.images.map((img, i) => (
@@ -152,17 +141,11 @@ export default function ProductDetails({ product }) {
         {/* ── Right: Info ────────────────────────────────────────── */}
         <div className="flex-1 p-6 lg:p-8 flex flex-col">
 
-          {/* Top meta */}
           <div className="flex items-start justify-between gap-4 mb-3">
             <div className="flex flex-wrap gap-2">
               {categoryDisplay && (
                 <span className="text-xs bg-green-50 text-green-700 font-medium px-3 py-1 rounded-full border border-green-100">
                   {categoryDisplay}
-                </span>
-              )}
-              {product.brand && (
-                <span className="text-xs bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-full">
-                  {product.brand}
                 </span>
               )}
             </div>
@@ -172,10 +155,8 @@ export default function ProductDetails({ product }) {
             </button>
           </div>
 
-          {/* Name */}
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight mb-3">{product.name}</h1>
 
-          {/* Rating row */}
           <div className="flex items-center gap-3 mb-5">
             <div className="flex">
               {Array(5).fill('').map((_, i) => (
@@ -193,7 +174,6 @@ export default function ProductDetails({ product }) {
             </div>
           </div>
 
-          {/* Price */}
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 mb-6 border border-green-100">
             <p className="text-4xl font-black text-slate-900">
               ₹{displayPrice > 0 ? displayPrice.toLocaleString('en-IN') : '—'}
@@ -205,51 +185,28 @@ export default function ProductDetails({ product }) {
             )}
           </div>
 
-          {/* Color */}
-          {colors.length > 0 && (
+          {/* Variant */}
+          {variants.length > 0 && (
             <div className="mb-5">
               <p className="text-sm font-bold text-slate-700 mb-2.5">
-                Color: {selectedColor
-                  ? <span className="text-green-600 font-semibold ml-1">{selectedColor}</span>
-                  : <span className="text-amber-500 font-normal ml-1 text-xs">Choose a color</span>}
+                Variant: {selectedVariant
+                  ? <span className="text-green-600 font-semibold ml-1">{selectedVariant.variantName}</span>
+                  : <span className="text-amber-500 font-normal ml-1 text-xs">Choose an option</span>}
               </p>
               <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <button key={color}
-                    onClick={() => { setSelectedColor(color); setSelectedSize(null); }}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
-                      selectedColor === color
-                        ? 'border-green-500 bg-green-600 text-white shadow-sm'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-green-300'
-                    }`}>
-                    {selectedColor === color && <Check size={12} className="inline mr-1.5" />}
-                    {color}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Size */}
-          {sizesForColor.length > 0 && (
-            <div className="mb-5">
-              <p className="text-sm font-bold text-slate-700 mb-2.5">
-                Size: {selectedSize
-                  ? <span className="text-green-600 font-semibold ml-1">{selectedSize}</span>
-                  : <span className="text-amber-500 font-normal ml-1 text-xs">Choose a size</span>}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {sizesForColor.map((size) => {
-                  const v = (product.variants || []).find((v) => v.color === selectedColor && v.size === size);
-                  const oos = v?.stock === 0;
+                {variants.map((v) => {
+                  const oos = (v.inventory?.quantity ?? 0) === 0;
                   return (
-                    <button key={size} onClick={() => !oos && setSelectedSize(size)} disabled={oos}
-                      className={`min-w-[48px] px-3 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+                    <button key={v.id}
+                      onClick={() => !oos && setSelectedVariantId(v.id)}
+                      disabled={oos}
+                      className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
                         oos ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed line-through'
-                            : selectedSize === size ? 'border-green-500 bg-green-600 text-white shadow-sm'
+                            : selectedVariantId === v.id ? 'border-green-500 bg-green-600 text-white shadow-sm'
                             : 'border-slate-200 bg-white text-slate-700 hover:border-green-300'
                       }`}>
-                      {size}
+                      {selectedVariantId === v.id && <Check size={12} className="inline mr-1.5" />}
+                      {v.variantName}
                     </button>
                   );
                 })}
@@ -261,10 +218,10 @@ export default function ProductDetails({ product }) {
           )}
 
           {/* Warning */}
-          {(!selectedColor || !selectedSize) && (
+          {variants.length > 0 && !selectedVariant && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700 mb-4">
               <AlertTriangle size={15} className="flex-shrink-0" />
-              {!selectedColor ? 'Select a color to continue' : 'Select a size to continue'}
+              Select an option to continue
             </div>
           )}
 

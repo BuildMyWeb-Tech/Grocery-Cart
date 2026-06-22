@@ -53,7 +53,6 @@ export default function CartPage() {
     const available = stockMap[item.variantId] ?? Infinity;
     if (newQty > available) {
       toast.error(`Only ${available} in stock`, { icon: '📦' });
-      // Fix: use variantId not id
       dispatch(updateCartQuantity({ variantId: item.variantId, quantity: available }));
       return;
     }
@@ -113,7 +112,6 @@ export default function CartPage() {
                 <button onClick={() => { setShowConfirmation(false); setProductToRemove(null); }}
                   className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-50">Cancel</button>
                 <button onClick={() => {
-                  // Fix: remove by variantId
                   dispatch(removeFromCart(productToRemove.variantId));
                   setShowConfirmation(false);
                   setProductToRemove(null);
@@ -181,10 +179,9 @@ export default function CartPage() {
                               {item.productName || item.name}
                             </Link>
                           </h3>
-                          {(item.color || item.size) && (
+                          {item.variantName && (
                             <div className="flex gap-1.5 mb-1">
-                              {item.color && <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{item.color}</span>}
-                              {item.size  && <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">{item.size}</span>}
+                              <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded font-semibold">{item.variantName}</span>
                             </div>
                           )}
                           <div className="flex items-center gap-3 flex-wrap">

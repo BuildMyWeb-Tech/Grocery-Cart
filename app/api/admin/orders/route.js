@@ -1,4 +1,4 @@
-  // app/api/admin/orders/route.js
+// app/api/admin/orders/route.js
 import prisma from '@/lib/prisma';
 import authAdmin from '@/middlewares/authAdmin';
 import { getAdminUserId } from '@/lib/getAdminUserId';
@@ -46,7 +46,7 @@ export async function GET(request) {
             include: {
               variant: {
                 select: {
-                  id: true, color: true, size: true, price: true, sku: true,
+                  id: true, variantName: true, price: true, sku: true,
                   product: { select: { id: true, name: true, images: true } },
                 },
               },
