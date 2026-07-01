@@ -18,11 +18,9 @@ function generateSlug(name) {
 
 // ── Resolve store auth (owner or employee) ────────────────────────────────────
 async function resolveStoreAuth(request) {
-  // Employee JWT first
   const employee = verifyEmployeeToken(request);
   if (employee) return { storeId: employee.storeId, employee, source: 'employee' };
 
-  // Clerk store owner
   const { userId } = getAuth(request);
   if (!userId) return { storeId: null };
   const storeId = await authSeller(userId);
@@ -50,11 +48,10 @@ export async function POST(request) {
     const isOrganic         = formData.get('isOrganic') === 'true';
     const isFeatured         = formData.get('isFeatured') === 'true';
     const keyFeaturesRaw  = formData.get('keyFeatures');
-    const categoryIdsRaw  = formData.get('categoryIds'); // JSON array of category IDs
-    const variantsRaw     = formData.get('variants');    // JSON array of variant objects
+    const categoryIdsRaw  = formData.get('categoryIds');
+    const variantsRaw     = formData.get('variants');
     const images          = formData.getAll('images');
 
-    // ── Validation ────────────────────────────────────────────────
     if (!name || !description) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
     }
@@ -87,7 +84,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'At least one variant is required' }, { status: 400 });
     }
 
-    // Validate each variant
     for (const v of variantList) {
       if (!v.variantName || !v.sku) {
         return NextResponse.json(
@@ -100,13 +96,11 @@ export async function POST(request) {
       }
     }
 
-    // Check SKU uniqueness across all variants in this request
     const skus = variantList.map((v) => v.sku);
     if (new Set(skus).size !== skus.length) {
       return NextResponse.json({ error: 'Duplicate SKUs in variants' }, { status: 400 });
     }
 
-    // Check SKU uniqueness in DB
     const existingSkus = await prisma.productVariant.findMany({
       where: { sku: { in: skus } },
       select: { sku: true },
@@ -118,7 +112,6 @@ export async function POST(request) {
       );
     }
 
-    // Validate categories belong to global or this store
     const validCategories = await prisma.category.findMany({
       where: {
         id: { in: categoryIds },
@@ -129,12 +122,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'One or more invalid category IDs' }, { status: 400 });
     }
 
-    // ── Slug generation ───────────────────────────────────────────
     let slug = generateSlug(name);
     const slugExists = await prisma.product.findFirst({ where: { slug, storeId } });
     if (slugExists) slug = `${slug}-${Date.now()}`;
 
-    // ── Upload images ─────────────────────────────────────────────
     const imageUrls = await Promise.all(
       images.map(async (image) => {
         const buffer = Buffer.from(await image.arrayBuffer());
@@ -159,7 +150,6 @@ export async function POST(request) {
     }
     keyFeatures = keyFeatures.filter((f) => typeof f === 'string' && f.trim() !== '');
 
-    // ── Create product + variants + inventory in transaction ──────
     const product = await prisma.$transaction(async (tx) => {
       const created = await tx.product.create({
         data: {
@@ -176,7 +166,6 @@ export async function POST(request) {
         },
       });
 
-      // Link categories via join table
       await tx.productCategory.createMany({
         data: categoryIds.map((categoryId) => ({
           productId: created.id,
@@ -184,7 +173,6 @@ export async function POST(request) {
         })),
       });
 
-      // Create variants + inventory per variant
       for (const v of variantList) {
         const variant = await tx.productVariant.create({
           data: {
@@ -196,7 +184,6 @@ export async function POST(request) {
           },
         });
 
-        // Create the linked inventory record — Current Stock / Minimum Stock live here
         await tx.inventory.create({
           data: {
             variantId: variant.id,
@@ -207,7 +194,7 @@ export async function POST(request) {
         });
       }
 
-    return tx.product.findUnique({
+      return tx.product.findUnique({
         where: { id: created.id },
         include: {
           variants: { include: { inventory: true } },
@@ -297,7 +284,6 @@ export async function PUT(request) {
     const productId = searchParams.get('id');
     if (!productId) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
 
-    // Verify product belongs to this store
     const existing = await prisma.product.findFirst({ where: { id: productId, storeId } });
     if (!existing) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
 
@@ -318,7 +304,6 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Name and description are required' }, { status: 400 });
     }
 
-    // Merge existing + new images
     let existingImages = [];
     try {
       existingImages = JSON.parse(existingImagesRaw || '[]');
@@ -364,7 +349,6 @@ export async function PUT(request) {
       status,
     };
 
-    // Update slug if name changed
     if (name !== existing.name) {
       let slug = generateSlug(name);
       const slugExists = await prisma.product.findFirst({
@@ -380,13 +364,11 @@ export async function PUT(request) {
         data: updateData,
       });
 
-      // Update categories if provided
       if (categoryIdsRaw) {
         let categoryIds = [];
         try { categoryIds = JSON.parse(categoryIdsRaw); } catch { categoryIds = []; }
 
         if (categoryIds.length > 0) {
-          // Validate categories
           const validCategories = await tx.category.findMany({
             where: { id: { in: categoryIds }, OR: [{ isGlobal: true }, { storeId }] },
           });
@@ -394,7 +376,6 @@ export async function PUT(request) {
             throw new Error('One or more invalid category IDs');
           }
 
-          // Replace categories
           await tx.productCategory.deleteMany({ where: { productId } });
           await tx.productCategory.createMany({
             data: categoryIds.map((categoryId) => ({ productId, categoryId })),
@@ -426,10 +407,35 @@ export async function DELETE(request) {
     const productId = searchParams.get('id');
     if (!productId) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
 
-    const existing = await prisma.product.findFirst({ where: { id: productId, storeId } });
+    const existing = await prisma.product.findFirst({
+      where: { id: productId, storeId },
+      include: { variants: { select: { id: true } } },
+    });
     if (!existing) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
 
-    // Cascade deletes variants, inventory, productCategory via Prisma schema
+    // Guard: cannot hard-delete a product whose variants are referenced by existing
+    // orders. The DB enforces this via RESTRICT on OrderItem.variantId, so we check
+    // first and return a clear error rather than letting it crash with a 500.
+    if (existing.variants.length > 0) {
+      const variantIds = existing.variants.map((v) => v.id);
+      const orderedItemCount = await prisma.orderItem.count({
+        where: { variantId: { in: variantIds } },
+      });
+
+      if (orderedItemCount > 0) {
+        return NextResponse.json(
+          {
+            error:
+              'This product cannot be deleted because it has been ordered by customers. ' +
+              'Set it to Inactive or Out of Stock to hide it from the store instead.',
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // No order references — safe to delete. Cascade removes variants, inventory,
+    // and productCategory join rows as declared in the Prisma schema.
     await prisma.product.delete({ where: { id: productId } });
 
     return NextResponse.json({ message: 'Product deleted successfully' });

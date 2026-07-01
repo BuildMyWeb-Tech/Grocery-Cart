@@ -12,8 +12,8 @@ import Link from 'next/link';
 import { ShieldAlertIcon, ArrowRightIcon } from 'lucide-react';
 
 export const metadata = {
-  title: 'Grocery Cart. - Admin Dashboard',
-  description: 'Grocery Cart. - Admin Dashboard',
+  title: 'GroceryCart. - Admin Dashboard',
+  description: 'GroceryCart. - Admin Dashboard',
 };
 
 export default async function RootAdminLayout({ children }) {

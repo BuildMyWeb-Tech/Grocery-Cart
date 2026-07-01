@@ -2,7 +2,7 @@
 import StoreLayout from '@/components/store/StoreLayout';
 
 export const metadata = {
-  title: 'KingCart. - Store Dashboard',
+  title: 'GroceryCart. - Store Dashboard',
   description: 'GroceryCart. - Store Dashboard',
 };
 
